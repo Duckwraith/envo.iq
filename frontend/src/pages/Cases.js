@@ -196,58 +196,63 @@ const Cases = () => {
               New Case
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg" data-testid="create-case-dialog">
+          <DialogContent className="sm:max-w-2xl max-h-[85vh]" data-testid="create-case-dialog">
             <DialogHeader>
               <DialogTitle>Create New Case</DialogTitle>
               <DialogDescription>
                 Fill in the details to create a new enforcement case.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleCreateCase} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <Label htmlFor="case_type">Case Type *</Label>
-                <Select
-                  value={newCase.case_type}
-                  onValueChange={(value) => setNewCase({ ...newCase, case_type: value })}
-                >
-                  <SelectTrigger data-testid="case-type-select">
-                    <SelectValue placeholder="Select case type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fly_tipping">Fly Tipping</SelectItem>
-                    <SelectItem value="abandoned_vehicle">Abandoned Vehicle</SelectItem>
-                    <SelectItem value="littering">Littering</SelectItem>
-                    <SelectItem value="dog_fouling">Dog Fouling</SelectItem>
-                    <SelectItem value="pspo_dog_control">PSPO Dog Control</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe the issue..."
-                  value={newCase.description}
-                  onChange={(e) => setNewCase({ ...newCase, description: e.target.value })}
-                  data-testid="case-description-input"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <ScrollArea className="max-h-[65vh] pr-4">
+              <form onSubmit={handleCreateCase} className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="postcode">Postcode</Label>
-                  <Input
-                    id="postcode"
-                    placeholder="e.g. SW1A 1AA"
-                    value={newCase.location.postcode}
-                    onChange={(e) => setNewCase({
-                      ...newCase,
-                      location: { ...newCase.location, postcode: e.target.value }
+                  <Label htmlFor="case_type">Case Type *</Label>
+                  <Select
+                    value={newCase.case_type}
+                    onValueChange={(value) => setNewCase({ 
+                      ...newCase, 
+                      case_type: value,
+                      type_specific_fields: {} // Reset specific fields when type changes
                     })}
-                    data-testid="case-postcode-input"
+                  >
+                    <SelectTrigger data-testid="case-type-select">
+                      <SelectValue placeholder="Select case type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fly_tipping">Fly Tipping</SelectItem>
+                      <SelectItem value="abandoned_vehicle">Abandoned Vehicle</SelectItem>
+                      <SelectItem value="littering">Littering</SelectItem>
+                      <SelectItem value="dog_fouling">Dog Fouling</SelectItem>
+                      <SelectItem value="pspo_dog_control">PSPO Dog Control</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description *</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Describe the issue..."
+                    value={newCase.description}
+                    onChange={(e) => setNewCase({ ...newCase, description: e.target.value })}
+                    data-testid="case-description-input"
+                    rows={3}
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="postcode">Postcode</Label>
+                    <Input
+                      id="postcode"
+                      placeholder="e.g. SW1A 1AA"
+                      value={newCase.location.postcode}
+                      onChange={(e) => setNewCase({
+                        ...newCase,
+                        location: { ...newCase.location, postcode: e.target.value }
+                      })}
+                      data-testid="case-postcode-input"
+                    />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="address">Address</Label>
