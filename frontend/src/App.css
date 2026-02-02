@@ -1,34 +1,300 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* GovEnforce App Styles */
+
+/* Layout */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
+.main-content {
+    flex: 1;
+    margin-left: 256px;
+    min-height: 100vh;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
     }
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
+/* Sidebar */
+.sidebar {
+    width: 256px;
+    background: white;
+    border-right: 1px solid #E5E7EB;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 40;
     display: flex;
     flex-direction: column;
+}
+
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 1rem 0;
+    overflow-y: auto;
+}
+
+.sidebar-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #E5E7EB;
+}
+
+/* Cards */
+.stat-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.25rem;
+    padding: 1.5rem;
+    transition: box-shadow 0.15s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+/* Tables */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background: #F9FAFB;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #E5E7EB;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.data-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.data-table tbody tr:hover {
+    background: #F9FAFB;
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 9999px;
+    text-transform: capitalize;
+}
+
+/* Timeline */
+.timeline {
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #E5E7EB;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -1.5rem;
+    top: 0.25rem;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #005EA5;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #E5E7EB;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+/* Map container */
+.map-container {
+    height: 500px;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    border: 1px solid #E5E7EB;
+}
+
+/* Form improvements */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+/* Button styles */
+.btn-primary {
+    background: #005EA5;
     color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease;
 }
 
-.App-link {
-    color: #61dafb;
+.btn-primary:hover {
+    background: #004F8C;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
+.btn-secondary {
+    background: #F3F2F1;
+    color: #0B0C0C;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+    background: #E5E7EB;
+}
+
+/* Notification dot */
+.notification-dot {
+    width: 8px;
+    height: 8px;
+    background: #D4351C;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #505A5F;
+}
+
+.empty-state-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    color: #B1B4B6;
+}
+
+/* Reference number styling */
+.reference-number {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    color: #505A5F;
+}
+
+/* Mobile navigation */
+.mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    border-top: 1px solid #E5E7EB;
+    z-index: 50;
+    padding: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .mobile-nav {
+        display: flex;
+        justify-content: space-around;
     }
-    to {
-        transform: rotate(360deg);
+    
+    .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
     }
+    
+    .sidebar.open {
+        transform: translateX(0);
+    }
+}
+
+/* Public report form */
+.public-form {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.public-header {
+    background: #005EA5;
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+/* Evidence grid */
+.evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.evidence-item {
+    aspect-ratio: 1;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    border: 1px solid #E5E7EB;
+    position: relative;
+}
+
+.evidence-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Loading spinner */
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #E5E7EB;
+    border-top-color: #005EA5;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
