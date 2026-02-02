@@ -269,6 +269,15 @@ const Cases = () => {
                 </div>
               </div>
 
+              {/* Case-Type Specific Fields */}
+              {newCase.case_type && (
+                <CaseTypeFields
+                  caseType={newCase.case_type}
+                  data={newCase.type_specific_fields}
+                  onChange={(fields) => setNewCase({ ...newCase, type_specific_fields: fields })}
+                />
+              )}
+
               <div className="flex justify-end gap-3 pt-4">
                 <Button
                   type="button"
@@ -295,6 +304,7 @@ const Cases = () => {
                 </Button>
               </div>
             </form>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </div>
