@@ -127,6 +127,19 @@ const CaseDetail = () => {
     }
   };
 
+  const handleSaveTypeSpecificFields = async () => {
+    setSavingFields(true);
+    try {
+      await axios.put(`${API}/cases/${caseId}`, { type_specific_fields: typeSpecificFields });
+      toast.success('Case details saved');
+      fetchCaseData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save details');
+    } finally {
+      setSavingFields(false);
+    }
+  };
+
   const handleAddNote = async (e) => {
     e.preventDefault();
     if (!newNote.trim()) return;
