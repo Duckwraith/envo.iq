@@ -271,6 +271,15 @@ const PublicReport = () => {
                 </div>
               </div>
 
+              {/* Case-Type Specific Fields */}
+              {report.case_type && (
+                <CaseTypeFields
+                  caseType={report.case_type}
+                  data={report.type_specific_fields}
+                  onChange={(fields) => setReport({ ...report, type_specific_fields: fields })}
+                />
+              )}
+
               {/* Photos */}
               <div className="space-y-4">
                 <Label className="flex items-center gap-2">
