@@ -38,6 +38,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { CaseTypeFields } from '@/components/CaseTypeFields';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
