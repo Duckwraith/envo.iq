@@ -136,6 +136,83 @@ class GovEnforceAPITester:
             self.log_test(f"Create case ({role})", False, str(e))
             return False, None
 
+    def test_create_case_with_type_specific_fields(self, case_type, type_specific_fields, role="manager"):
+        """Test case creation with type-specific fields"""
+        try:
+            case_data = {
+                "case_type": case_type,
+                "description": f"Test {case_type} case with specific fields",
+                "location": {
+                    "postcode": "SW1A 1AA",
+                    "address": "Test Street, London"
+                },
+                "type_specific_fields": type_specific_fields
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/cases",
+                json=case_data,
+                headers=self.get_headers(role)
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                case_id = data.get("id")
+                self.log_test(f"Create {case_type} case with specific fields", True)
+                return True, case_id, data
+            else:
+                self.log_test(f"Create {case_type} case with specific fields", False, f"Status: {response.status_code}")
+                return False, None, None
+        except Exception as e:
+            self.log_test(f"Create {case_type} case with specific fields", False, str(e))
+            return False, None, None
+
+    def test_update_case_type_specific_fields(self, case_id, type_specific_fields, role="manager"):
+        """Test updating case with type-specific fields"""
+        try:
+            update_data = {"type_specific_fields": type_specific_fields}
+            response = requests.put(
+                f"{self.base_url}/cases/{case_id}",
+                json=update_data,
+                headers=self.get_headers(role)
+            )
+            success = response.status_code == 200
+            self.log_test(f"Update case type-specific fields ({role})", success, 
+                         f"Status: {response.status_code}" if not success else "")
+            return success
+        except Exception as e:
+            self.log_test(f"Update case type-specific fields ({role})", False, str(e))
+            return False
+
+    def test_public_report_with_type_specific_fields(self, case_type, type_specific_fields):
+        """Test public report submission with type-specific fields"""
+        try:
+            report_data = {
+                "case_type": case_type,
+                "description": f"Test public {case_type} report with specific fields",
+                "location": {
+                    "postcode": "E1 6AN",
+                    "address": "Test Public Street"
+                },
+                "reporter_name": "Test Reporter",
+                "reporter_contact": "test@example.com",
+                "type_specific_fields": type_specific_fields
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/public/report",
+                json=report_data,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            success = response.status_code == 200
+            self.log_test(f"Public {case_type} report with specific fields", success, 
+                         f"Status: {response.status_code}" if not success else "")
+            return success
+        except Exception as e:
+            self.log_test(f"Public {case_type} report with specific fields", False, str(e))
+            return False
+
     def test_get_case_detail(self, case_id, role="manager"):
         """Test get case detail"""
         try:
