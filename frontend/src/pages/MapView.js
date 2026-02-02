@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -74,11 +74,7 @@ const MapView = () => {
   // Default center: London
   const defaultCenter = [51.5074, -0.1278];
 
-  useEffect(() => {
-    fetchCases();
-  }, [filters]);
-
-  const fetchCases = async () => {
+  const fetchCases = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (filters.status && filters.status !== 'all') params.append('status', filters.status);
@@ -95,7 +91,11 @@ const MapView = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchCases();
+  }, [fetchCases]);
 
   const getCaseTypeLabel = (type) => {
     const labels = {
