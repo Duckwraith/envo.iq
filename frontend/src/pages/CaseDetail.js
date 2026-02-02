@@ -22,7 +22,9 @@ import {
   CheckCircle,
   AlertTriangle,
   X,
-  Download
+  Download,
+  ClipboardList,
+  Save
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +48,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { CaseTypeFields } from '@/components/CaseTypeFields';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
