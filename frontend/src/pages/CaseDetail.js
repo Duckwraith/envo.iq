@@ -85,7 +85,7 @@ const CaseDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [caseId, navigate]);
 
   const fetchUsers = async () => {
     try {
@@ -95,6 +95,11 @@ const CaseDetail = () => {
       console.error('Failed to fetch users');
     }
   };
+
+  useEffect(() => {
+    fetchCaseData();
+    fetchUsers();
+  }, [fetchCaseData]);
 
   const handleStatusChange = async (newStatus) => {
     try {
