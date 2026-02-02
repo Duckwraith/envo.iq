@@ -91,7 +91,10 @@ const PublicReport = () => {
     try {
       const payload = {
         ...report,
-        evidence_files: photos.map(p => p.base64)
+        evidence_files: photos.map(p => p.base64),
+        type_specific_fields: report.type_specific_fields && Object.keys(report.type_specific_fields).length > 0 
+          ? report.type_specific_fields 
+          : null
       };
       
       const response = await axios.post(`${API}/public/report`, payload);
