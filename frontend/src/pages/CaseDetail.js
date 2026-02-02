@@ -359,8 +359,12 @@ const CaseDetail = () => {
       </Card>
 
       {/* Tabs */}
-      <Tabs defaultValue="notes" className="space-y-4">
+      <Tabs defaultValue="details" className="space-y-4">
         <TabsList className="bg-white border">
+          <TabsTrigger value="details" data-testid="details-tab">
+            <ClipboardList className="w-4 h-4 mr-2" />
+            Details
+          </TabsTrigger>
           <TabsTrigger value="notes" data-testid="notes-tab">
             <MessageSquare className="w-4 h-4 mr-2" />
             Notes ({notes.length})
@@ -374,6 +378,46 @@ const CaseDetail = () => {
             Timeline
           </TabsTrigger>
         </TabsList>
+
+        {/* Details Tab - Case Type Specific Fields */}
+        <TabsContent value="details">
+          <Card className="border">
+            <CardHeader className="border-b flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Case Details</CardTitle>
+              {canEditCase() && (
+                <Button
+                  onClick={handleSaveTypeSpecificFields}
+                  className="bg-[#005EA5] hover:bg-[#004F8C]"
+                  disabled={savingFields}
+                  data-testid="save-details-btn"
+                >
+                  {savingFields ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Details
+                    </>
+                  )}
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent className="p-6">
+              <CaseTypeFields
+                caseType={caseData.case_type}
+                data={typeSpecificFields}
+                onChange={setTypeSpecificFields}
+                readOnly={!canEditCase()}
+              />
+              {!caseData.case_type && (
+                <p className="text-[#505A5F] text-center py-8">No case type specific fields available.</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         {/* Notes Tab */}
         <TabsContent value="notes">
