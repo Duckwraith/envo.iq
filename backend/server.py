@@ -185,12 +185,14 @@ class CaseCreate(BaseModel):
     location: LocationData
     reporter_name: Optional[str] = None
     reporter_contact: Optional[str] = None
+    type_specific_fields: Optional[CaseTypeSpecificFields] = None
 
 class CaseUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[CaseStatus] = None
     assigned_to: Optional[str] = None
     location: Optional[LocationData] = None
+    type_specific_fields: Optional[CaseTypeSpecificFields] = None
 
 class Case(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -208,6 +210,7 @@ class Case(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     closed_at: Optional[datetime] = None
     created_by: Optional[str] = None
+    type_specific_fields: Optional[CaseTypeSpecificFields] = None
 
 class CaseNote(BaseModel):
     model_config = ConfigDict(extra="ignore")
