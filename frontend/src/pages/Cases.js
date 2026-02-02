@@ -94,13 +94,20 @@ const Cases = () => {
 
     setCreating(true);
     try {
-      const response = await axios.post(`${API}/cases`, newCase);
+      const payload = {
+        ...newCase,
+        type_specific_fields: newCase.type_specific_fields && Object.keys(newCase.type_specific_fields).length > 0 
+          ? newCase.type_specific_fields 
+          : null
+      };
+      const response = await axios.post(`${API}/cases`, payload);
       toast.success(`Case ${response.data.reference_number} created successfully`);
       setShowCreateDialog(false);
       setNewCase({
         case_type: '',
         description: '',
-        location: { postcode: '', address: '' }
+        location: { postcode: '', address: '' },
+        type_specific_fields: {}
       });
       fetchCases();
     } catch (error) {
