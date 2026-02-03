@@ -594,6 +594,92 @@ async def create_notification(user_id: str, title: str, message: str, case_id: O
     doc['created_at'] = doc['created_at'].isoformat()
     await db.notifications.insert_one(doc)
 
+# What3Words Helper Functions
+async def w3w_convert_to_coordinates(words: str) -> Optional[Dict[str, Any]]:
+    """Convert what3words address to coordinates"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{W3W_API_URL}/convert-to-coordinates",
+                params={"words": words, "key": W3W_API_KEY}
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if "coordinates" in data:
+                    return {
+                        "latitude": data["coordinates"]["lat"],
+                        "longitude": data["coordinates"]["lng"],
+                        "words": data["words"],
+                        "nearestPlace": data.get("nearestPlace", ""),
+                        "country": data.get("country", "")
+                    }
+            return None
+    except Exception as e:
+        logging.error(f"W3W API error (convert-to-coordinates): {e}")
+        return None
+
+async def w3w_convert_to_3wa(lat: float, lng: float) -> Optional[str]:
+    """Convert coordinates to what3words address"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{W3W_API_URL}/convert-to-3wa",
+                params={"coordinates": f"{lat},{lng}", "key": W3W_API_KEY}
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("words")
+            return None
+    except Exception as e:
+        logging.error(f"W3W API error (convert-to-3wa): {e}")
+        return None
+
+async def get_user_team_types(user: dict) -> List[str]:
+    """Get the team types for a user's assigned teams"""
+    user_team_ids = user.get("teams", [])
+    if not user_team_ids:
+        return []
+    teams = await db.teams.find({"id": {"$in": user_team_ids}}, {"_id": 0}).to_list(100)
+    return [t["team_type"] for t in teams]
+
+async def can_user_view_case_type(user: dict, case_type: str) -> bool:
+    """Check if user can view a specific case type based on team visibility rules"""
+    # Managers and supervisors with cross-team access can see all
+    if user["role"] == UserRole.MANAGER.value:
+        return True
+    if user["role"] == UserRole.SUPERVISOR.value and user.get("cross_team_access", False):
+        return True
+    
+    # Get user's team types
+    user_team_types = await get_user_team_types(user)
+    if not user_team_types:
+        return True  # Backward compatibility - no teams = see all
+    
+    # Check if any of user's team types can view this case type
+    try:
+        case_type_enum = CaseType(case_type)
+        allowed_team_types = CASE_TYPE_VISIBILITY.get(case_type_enum, [])
+        for team_type in user_team_types:
+            if TeamType(team_type) in allowed_team_types:
+                return True
+    except ValueError:
+        return True  # Unknown case type - allow view
+    
+    return False
+
+def is_fly_tipping_case(case_type: str) -> bool:
+    """Check if case type is a fly-tipping variant"""
+    return case_type in [
+        CaseType.FLY_TIPPING.value,
+        CaseType.FLY_TIPPING_PRIVATE.value,
+        CaseType.FLY_TIPPING_ORGANISED.value
+    ]
+
+async def is_user_waste_management(user: dict) -> bool:
+    """Check if user belongs to Waste Management team"""
+    user_team_types = await get_user_team_types(user)
+    return TeamType.WASTE_MANAGEMENT.value in user_team_types
+
 # Auth Endpoints
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
