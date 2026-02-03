@@ -79,3 +79,22 @@ Build an app for an enforcement team in a United Kingdom local government author
 - Manager: admin@council.gov.uk / admin123
 - Supervisor: supervisor@council.gov.uk / super123
 - Officer: officer@council.gov.uk / officer123
+
+### Phase 3 (2026-02-02) - Editable Fields & Location Tab
+- **Editable vs Read-Only Fields**:
+  - Officers: description, location, type-specific fields, evidence, notes
+  - Read-only: reference number, case type, creation date, reporting source
+  - Supervisor-only: assign/reassign, close cases
+- **Location Tab**:
+  - Address, postcode, what3words, lat/lng fields
+  - Interactive Leaflet map with draggable marker
+  - Location History with timestamps and user tracking
+  - Previous locations preserved in audit log
+- **Mandatory Field Indicators**:
+  - Required fields marked with red asterisk (*)
+  - Fly Tipping: waste description, no_evidence_available checkbox
+  - Abandoned Vehicle: registration_not_visible checkbox, condition, time at location
+  - Littering: litter type, witnessed (yes/no)
+  - Dog Fouling: occurrence datetime
+  - PSPO: breach nature, signage present
+- **Reporting Source**: Public/Officer/Other badge on case header
