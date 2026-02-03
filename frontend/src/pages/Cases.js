@@ -133,10 +133,20 @@ const Cases = () => {
   const getCaseTypeIcon = (type) => {
     const icons = {
       fly_tipping: Trash2,
+      fly_tipping_private: Trash2,
+      fly_tipping_organised: Trash2,
       abandoned_vehicle: Car,
+      nuisance_vehicle: Car,
+      nuisance_vehicle_seller: Car,
+      nuisance_vehicle_parking: Car,
+      nuisance_vehicle_asb: Car,
       littering: Cigarette,
       dog_fouling: Dog,
-      pspo_dog_control: Shield
+      pspo_dog_control: Shield,
+      untidy_land: FileText,
+      high_hedges: FileText,
+      waste_carrier_licensing: FileText,
+      complex_environmental: Shield
     };
     return icons[type] || FileText;
   };
@@ -144,12 +154,22 @@ const Cases = () => {
   const getCaseTypeLabel = (type) => {
     const labels = {
       fly_tipping: 'Fly Tipping',
+      fly_tipping_private: 'Fly Tipping (Private)',
+      fly_tipping_organised: 'Fly Tipping (Organised)',
       abandoned_vehicle: 'Abandoned Vehicle',
+      nuisance_vehicle: 'Nuisance Vehicle',
+      nuisance_vehicle_seller: 'On-Street Seller',
+      nuisance_vehicle_parking: 'Parking Nuisance',
+      nuisance_vehicle_asb: 'ASB Vehicle',
       littering: 'Littering',
       dog_fouling: 'Dog Fouling',
-      pspo_dog_control: 'PSPO Dog Control'
+      pspo_dog_control: 'PSPO Dog Control',
+      untidy_land: 'Untidy Land',
+      high_hedges: 'High Hedges',
+      waste_carrier_licensing: 'Waste Carrier',
+      complex_environmental: 'Environmental Crime'
     };
-    return labels[type] || type;
+    return labels[type] || type?.replace(/_/g, ' ');
   };
 
   const getStatusBadge = (status) => {
