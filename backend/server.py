@@ -588,6 +588,144 @@ async def delete_user(user_id: str, current_user: dict = Depends(get_current_use
     
     return {"message": "User deleted successfully"}
 
+# System Settings Endpoints
+@api_router.get("/settings")
+async def get_system_settings(current_user: dict = Depends(get_current_user)):
+    """Get system settings - all authenticated users can view"""
+    settings = await db.system_settings.find_one({"id": "system_settings"}, {"_id": 0})
+    if not settings:
+        # Return defaults if not configured
+        default_settings = SystemSettings()
+        return default_settings.model_dump()
+    return settings
+
+@api_router.put("/settings")
+async def update_system_settings(updates: SystemSettingsUpdate, current_user: dict = Depends(get_current_user)):
+    """Update system settings - managers only"""
+    if current_user["role"] != UserRole.MANAGER.value:
+        raise HTTPException(status_code=403, detail="Only managers can update settings")
+    
+    existing = await db.system_settings.find_one({"id": "system_settings"}, {"_id": 0})
+    
+    update_data = {k: v for k, v in updates.model_dump(exclude_none=True).items()}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    update_data["updated_by"] = current_user["id"]
+    
+    if updates.map_settings:
+        update_data["map_settings"] = updates.map_settings.model_dump()
+    
+    if existing:
+        await db.system_settings.update_one({"id": "system_settings"}, {"$set": update_data})
+    else:
+        new_settings = SystemSettings(**update_data)
+        doc = new_settings.model_dump()
+        doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.system_settings.insert_one(doc)
+    
+    await log_access_decision(current_user, "system_settings", "update", True, "Manager updated settings")
+    
+    return {"message": "Settings updated successfully"}
+
+# Team Endpoints
+@api_router.get("/teams")
+async def get_teams(current_user: dict = Depends(get_current_user)):
+    """Get all teams - all authenticated users can view"""
+    teams = await db.teams.find({}, {"_id": 0}).to_list(100)
+    return teams
+
+@api_router.get("/teams/{team_id}")
+async def get_team(team_id: str, current_user: dict = Depends(get_current_user)):
+    team = await db.teams.find_one({"id": team_id}, {"_id": 0})
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    return team
+
+@api_router.post("/teams", response_model=Team)
+async def create_team(team_data: TeamCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new team - managers only"""
+    if current_user["role"] != UserRole.MANAGER.value:
+        raise HTTPException(status_code=403, detail="Only managers can create teams")
+    
+    # Check for duplicate name
+    existing = await db.teams.find_one({"name": team_data.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Team with this name already exists")
+    
+    team = Team(**team_data.model_dump())
+    doc = team.model_dump()
+    doc["created_at"] = doc["created_at"].isoformat()
+    
+    await db.teams.insert_one(doc)
+    await log_access_decision(current_user, f"team:{team.id}", "create", True, f"Created team {team.name}")
+    
+    return team
+
+@api_router.put("/teams/{team_id}")
+async def update_team(team_id: str, updates: TeamUpdate, current_user: dict = Depends(get_current_user)):
+    """Update a team - managers only"""
+    if current_user["role"] != UserRole.MANAGER.value:
+        raise HTTPException(status_code=403, detail="Only managers can update teams")
+    
+    team = await db.teams.find_one({"id": team_id}, {"_id": 0})
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    
+    update_data = {k: v for k, v in updates.model_dump(exclude_none=True).items()}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    await db.teams.update_one({"id": team_id}, {"$set": update_data})
+    await log_access_decision(current_user, f"team:{team_id}", "update", True, f"Updated team {team['name']}")
+    
+    return {"message": "Team updated successfully"}
+
+@api_router.delete("/teams/{team_id}")
+async def delete_team(team_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a team - managers only"""
+    if current_user["role"] != UserRole.MANAGER.value:
+        raise HTTPException(status_code=403, detail="Only managers can delete teams")
+    
+    # Check if team has assigned cases
+    case_count = await db.cases.count_documents({"owning_team": team_id})
+    if case_count > 0:
+        raise HTTPException(status_code=400, detail=f"Cannot delete team with {case_count} assigned cases")
+    
+    result = await db.teams.delete_one({"id": team_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Team not found")
+    
+    # Remove team from users
+    await db.users.update_many({"teams": team_id}, {"$pull": {"teams": team_id}})
+    
+    await log_access_decision(current_user, f"team:{team_id}", "delete", True, "Deleted team")
+    
+    return {"message": "Team deleted successfully"}
+
+@api_router.get("/teams/{team_id}/members")
+async def get_team_members(team_id: str, current_user: dict = Depends(get_current_user)):
+    """Get members of a team"""
+    team = await db.teams.find_one({"id": team_id}, {"_id": 0})
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    
+    members = await db.users.find({"teams": team_id}, {"_id": 0, "password": 0}).to_list(1000)
+    return members
+
+@api_router.get("/case-types/teams")
+async def get_case_type_team_mapping(current_user: dict = Depends(get_current_user)):
+    """Get mapping of case types to allowed teams"""
+    result = {}
+    for case_type, team_types in CASE_TYPE_TEAMS.items():
+        teams = await db.teams.find(
+            {"team_type": {"$in": [t.value for t in team_types]}, "is_active": True},
+            {"_id": 0}
+        ).to_list(100)
+        result[case_type.value] = {
+            "allowed_team_types": [t.value for t in team_types],
+            "available_teams": teams
+        }
+    return result
+
 # Case Endpoints
 @api_router.get("/cases")
 async def get_cases(
