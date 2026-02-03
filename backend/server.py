@@ -228,6 +228,8 @@ class Case(BaseModel):
     closed_at: Optional[datetime] = None
     created_by: Optional[str] = None
     type_specific_fields: Optional[CaseTypeSpecificFields] = None
+    reporting_source: Optional[ReportingSource] = ReportingSource.OFFICER
+    location_history: Optional[List[dict]] = None  # Track location changes
 
 class CaseNote(BaseModel):
     model_config = ConfigDict(extra="ignore")
