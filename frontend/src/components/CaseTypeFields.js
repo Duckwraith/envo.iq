@@ -69,7 +69,7 @@ const YES_NO_UNKNOWN = [
 ];
 
 // Fly Tipping Fields Component
-export const FlyTippingFields = ({ data, onChange, readOnly = false }) => {
+export const FlyTippingFields = ({ data, onChange, readOnly = false, hasEvidence = false }) => {
   const fields = data?.fly_tipping || {};
   
   const updateField = (field, value) => {
@@ -98,11 +98,14 @@ export const FlyTippingFields = ({ data, onChange, readOnly = false }) => {
   return (
     <Card className="border mt-4">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Fly Tipping Details</CardTitle>
+        <CardTitle className="text-base flex items-center gap-2">
+          Fly Tipping Details
+          <span className="text-xs font-normal text-[#505A5F]">(Environmental Protection Act 1990)</span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label>Description of Waste</Label>
+          <RequiredLabel required>Description of Waste</RequiredLabel>
           <Textarea
             placeholder="Describe the waste found..."
             value={fields.waste_description || ''}
