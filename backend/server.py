@@ -7,13 +7,14 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 import base64
 import aiofiles
+import httpx
 from enum import Enum
 
 ROOT_DIR = Path(__file__).parent
@@ -28,6 +29,10 @@ db = client[os.environ['DB_NAME']]
 JWT_SECRET = os.environ.get('JWT_SECRET', 'govenforce-secret-key-change-in-production')
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
+
+# What3Words API Settings
+W3W_API_KEY = os.environ.get('W3W_API_KEY', 'INO2TWLZ')
+W3W_API_URL = "https://api.what3words.com/v3"
 
 # Create the main app
 app = FastAPI(title="GovEnforce API", version="1.0.0")
@@ -49,35 +54,50 @@ class TeamType(str, Enum):
     WASTE_MANAGEMENT = "waste_management"
 
 class CaseType(str, Enum):
-    # General case types
+    # Fly-tipping variants
     FLY_TIPPING = "fly_tipping"
     FLY_TIPPING_PRIVATE = "fly_tipping_private"
     FLY_TIPPING_ORGANISED = "fly_tipping_organised"
+    # Vehicle related
     ABANDONED_VEHICLE = "abandoned_vehicle"
+    NUISANCE_VEHICLE = "nuisance_vehicle"
+    NUISANCE_VEHICLE_SELLER = "nuisance_vehicle_seller"
+    NUISANCE_VEHICLE_PARKING = "nuisance_vehicle_parking"
+    NUISANCE_VEHICLE_ASB = "nuisance_vehicle_asb"
+    # General enforcement
     LITTERING = "littering"
     DOG_FOULING = "dog_fouling"
     PSPO_DOG_CONTROL = "pspo_dog_control"
-    # Additional case types
     UNTIDY_LAND = "untidy_land"
     HIGH_HEDGES = "high_hedges"
     WASTE_CARRIER_LICENSING = "waste_carrier_licensing"
-    NUISANCE_VEHICLE = "nuisance_vehicle"
+    # Environmental crimes
     COMPLEX_ENVIRONMENTAL = "complex_environmental"
 
-# Case type to team mapping
-CASE_TYPE_TEAMS = {
-    CaseType.FLY_TIPPING: [TeamType.WASTE_MANAGEMENT, TeamType.ENFORCEMENT],
-    CaseType.FLY_TIPPING_PRIVATE: [TeamType.ENFORCEMENT],
+# Case type to team visibility mapping - defines which teams can VIEW each case type
+CASE_TYPE_VISIBILITY = {
+    # Waste Management can only see general fly-tipping
+    CaseType.FLY_TIPPING: [TeamType.WASTE_MANAGEMENT, TeamType.ENFORCEMENT, TeamType.ENVIRONMENTAL_CRIMES],
+    # Enforcement handles private land and most case types
+    CaseType.FLY_TIPPING_PRIVATE: [TeamType.ENFORCEMENT, TeamType.ENVIRONMENTAL_CRIMES],
     CaseType.FLY_TIPPING_ORGANISED: [TeamType.ENFORCEMENT, TeamType.ENVIRONMENTAL_CRIMES],
     CaseType.ABANDONED_VEHICLE: [TeamType.ENFORCEMENT],
-    CaseType.LITTERING: [TeamType.WASTE_MANAGEMENT, TeamType.ENFORCEMENT],
+    CaseType.NUISANCE_VEHICLE: [TeamType.ENFORCEMENT],
+    CaseType.NUISANCE_VEHICLE_SELLER: [TeamType.ENFORCEMENT],
+    CaseType.NUISANCE_VEHICLE_PARKING: [TeamType.ENFORCEMENT],
+    CaseType.NUISANCE_VEHICLE_ASB: [TeamType.ENFORCEMENT],
+    CaseType.LITTERING: [TeamType.ENFORCEMENT],
     CaseType.DOG_FOULING: [TeamType.ENFORCEMENT],
     CaseType.PSPO_DOG_CONTROL: [TeamType.ENFORCEMENT],
     CaseType.UNTIDY_LAND: [TeamType.ENFORCEMENT],
     CaseType.HIGH_HEDGES: [TeamType.ENFORCEMENT],
     CaseType.WASTE_CARRIER_LICENSING: [TeamType.ENFORCEMENT],
-    CaseType.NUISANCE_VEHICLE: [TeamType.ENFORCEMENT],
+    # Environmental crimes has full visibility
     CaseType.COMPLEX_ENVIRONMENTAL: [TeamType.ENVIRONMENTAL_CRIMES],
+}
+
+# For backward compatibility - teams that can be assigned cases
+CASE_TYPE_TEAMS = CASE_TYPE_VISIBILITY
 }
 
 class CaseStatus(str, Enum):
