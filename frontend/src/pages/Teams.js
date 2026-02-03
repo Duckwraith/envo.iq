@@ -474,7 +474,7 @@ const Teams = () => {
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
                   <Label>Team Active</Label>
-                  <p className="text-xs text-[#505A5F]">Inactive teams won't receive new cases</p>
+                  <p className="text-xs text-[#505A5F]">Inactive teams will not receive new cases</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {selectedTeam.is_active !== false ? (
@@ -524,7 +524,7 @@ const Teams = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Team</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{selectedTeam?.name}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{selectedTeam?.name}&quot;? This action cannot be undone.
               Teams with assigned cases cannot be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>

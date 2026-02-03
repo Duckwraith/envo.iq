@@ -313,7 +313,7 @@ const AdminSettings = () => {
 
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  <strong>Tip:</strong> To find coordinates for your area, right-click on Google Maps and select "What's here?" to see the latitude and longitude.
+                  <strong>Tip:</strong> To find coordinates for your area, right-click on Google Maps and select &quot;What&apos;s here?&quot; to see the latitude and longitude.
                 </p>
               </div>
             </CardContent>
