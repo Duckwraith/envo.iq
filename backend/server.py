@@ -628,6 +628,10 @@ async def w3w_convert_to_3wa(lat: float, lng: float) -> Optional[str]:
             if response.status_code == 200:
                 data = response.json()
                 return data.get("words")
+            elif response.status_code == 402:
+                logging.warning("W3W API: Payment required or quota exceeded")
+            else:
+                logging.warning(f"W3W API returned status {response.status_code}")
             return None
     except Exception as e:
         logging.error(f"W3W API error (convert-to-3wa): {e}")
