@@ -98,7 +98,6 @@ CASE_TYPE_VISIBILITY = {
 
 # For backward compatibility - teams that can be assigned cases
 CASE_TYPE_TEAMS = CASE_TYPE_VISIBILITY
-}
 
 class CaseStatus(str, Enum):
     NEW = "new"
