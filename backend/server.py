@@ -292,6 +292,7 @@ class CaseCreate(BaseModel):
     reporter_contact: Optional[str] = None
     type_specific_fields: Optional[CaseTypeSpecificFields] = None
     reporting_source: Optional[ReportingSource] = ReportingSource.OFFICER
+    owning_team: Optional[str] = None  # Team ID
 
 class CaseUpdate(BaseModel):
     description: Optional[str] = None
@@ -299,6 +300,7 @@ class CaseUpdate(BaseModel):
     assigned_to: Optional[str] = None
     location: Optional[LocationData] = None
     type_specific_fields: Optional[CaseTypeSpecificFields] = None
+    owning_team: Optional[str] = None  # Can reassign team
 
 class Case(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -319,6 +321,8 @@ class Case(BaseModel):
     type_specific_fields: Optional[CaseTypeSpecificFields] = None
     reporting_source: Optional[ReportingSource] = ReportingSource.OFFICER
     location_history: Optional[List[dict]] = None  # Track location changes
+    owning_team: Optional[str] = None  # Team ID
+    owning_team_name: Optional[str] = None  # Team name for display
 
 class CaseNote(BaseModel):
     model_config = ConfigDict(extra="ignore")
