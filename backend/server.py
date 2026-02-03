@@ -562,15 +562,27 @@ async def update_user(user_id: str, updates: dict, current_user: dict = Depends(
     if current_user["role"] != UserRole.MANAGER.value:
         raise HTTPException(status_code=403, detail="Only managers can update users")
     
-    allowed_fields = ["name", "role", "is_active"]
+    allowed_fields = ["name", "role", "is_active", "teams", "cross_team_access"]
     update_data = {k: v for k, v in updates.items() if k in allowed_fields}
     
     if not update_data:
         raise HTTPException(status_code=400, detail="No valid fields to update")
     
+    # Validate team IDs if provided
+    if "teams" in update_data:
+        team_ids = update_data["teams"]
+        if team_ids:
+            valid_teams = await db.teams.find({"id": {"$in": team_ids}}, {"_id": 0}).to_list(100)
+            valid_team_ids = [t["id"] for t in valid_teams]
+            invalid_ids = [tid for tid in team_ids if tid not in valid_team_ids]
+            if invalid_ids:
+                raise HTTPException(status_code=400, detail=f"Invalid team IDs: {invalid_ids}")
+    
     result = await db.users.update_one({"id": user_id}, {"$set": update_data})
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    await log_access_decision(current_user, f"user:{user_id}", "update", True, f"Updated fields: {list(update_data.keys())}")
     
     return {"message": "User updated successfully"}
 
@@ -733,19 +745,48 @@ async def get_cases(
     case_type: Optional[CaseType] = None,
     assigned_to: Optional[str] = None,
     unassigned: Optional[bool] = None,
+    team_id: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
     query = {}
     
-    # Officers can only see assigned cases
+    # Team-based filtering
+    user_teams = current_user.get("teams", [])
+    has_cross_team = current_user.get("cross_team_access", False)
+    
+    # Managers always see all cases
+    # Supervisors with cross_team_access see all cases
+    # Others see only cases from their teams (or unassigned teams for backward compat)
+    if current_user["role"] != UserRole.MANAGER.value:
+        if not (current_user["role"] == UserRole.SUPERVISOR.value and has_cross_team):
+            if user_teams:
+                # Filter by user's teams or cases without team assignment
+                query["$or"] = [
+                    {"owning_team": {"$in": user_teams}},
+                    {"owning_team": None},
+                    {"owning_team": {"$exists": False}}
+                ]
+    
+    # Officers can only see assigned cases or unassigned pool
     if current_user["role"] == UserRole.OFFICER.value:
+        team_filter = query.get("$or", [])
         if unassigned:
             query["assigned_to"] = None
         else:
-            query["$or"] = [
+            # Combine team filter with assignment filter
+            assignment_conditions = [
                 {"assigned_to": current_user["id"]},
-                {"assigned_to": None}  # Unassigned pool for self-assignment
+                {"assigned_to": None}
             ]
+            if team_filter:
+                # Must match both team AND assignment
+                query["$and"] = [
+                    {"$or": team_filter},
+                    {"$or": assignment_conditions}
+                ]
+                del query["$or"]
+            else:
+                query["$or"] = assignment_conditions
     
     if status:
         query["status"] = status.value
@@ -755,6 +796,8 @@ async def get_cases(
         query["assigned_to"] = assigned_to
     if unassigned and current_user["role"] != UserRole.OFFICER.value:
         query["assigned_to"] = None
+    if team_id:
+        query["owning_team"] = team_id
     
     cases = await db.cases.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
     return cases
@@ -764,6 +807,11 @@ async def get_case(case_id: str, current_user: dict = Depends(get_current_user))
     case = await db.cases.find_one({"id": case_id}, {"_id": 0})
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
+    
+    # Check team-based access
+    if not await can_user_access_case(current_user, case):
+        await log_access_decision(current_user, f"case:{case_id}", "view", False, "Team access denied")
+        raise HTTPException(status_code=403, detail="Not authorized to view this case - team access denied")
     
     # Officers can only view assigned cases or unassigned ones
     if current_user["role"] == UserRole.OFFICER.value:
