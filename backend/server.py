@@ -1122,13 +1122,14 @@ async def update_case(case_id: str, updates: CaseUpdate, current_user: dict = De
         # Officers can't change assignment
         if updates.assigned_to:
             raise HTTPException(status_code=403, detail="Officers cannot reassign cases")
-        # Officers CAN close cases but need closure_reason and final_note
-        if updates.status == CaseStatus.CLOSED:
-            if not updates.closure_reason or not updates.final_note:
-                raise HTTPException(
-                    status_code=400, 
-                    detail="Closure reason and final note are required when closing a case"
-                )
+    
+    # ALL users must provide closure_reason and final_note when closing a case
+    if updates.status == CaseStatus.CLOSED:
+        if not updates.closure_reason or not updates.final_note:
+            raise HTTPException(
+                status_code=400, 
+                detail="Closure reason and final note are required when closing a case"
+            )
     
     # Only supervisors/managers can reopen closed cases
     if case.get("status") == CaseStatus.CLOSED.value:
