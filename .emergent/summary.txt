@@ -1,0 +1,148 @@
+<analysis>**original_problem_statement:** 
+Build me an app for an enforcement team in a united kingdom local government authority council. The team deal with cases such as fly tipping, abandoned vehicles, littering, dog fouling, public spaces protection order enforcement. Reports are self generated or received online, need to be able to upload photos. Cases can be assignment based.
+
+**PRODUCT REQUIREMENTS (based on user feedback):**
+- **Authentication:** Role-based access (Officers, Supervisors, Managers) with custom JWT authentication.
+- **Case Management:** Cases have a status workflow (New → Assigned → Investigating → Closed), can be assigned manually by Supervisors or self-assigned by Officers from an unassigned pool. A full audit log is required.
+- **Evidence:** Ability to upload photos and documents for each case.
+- **Reporting:** Basic case statistics and exportable CSV reports.
+- **Public Interface:** A public-facing form for reporting issues without requiring a login.
+- **Geolocation:** A map view to display cases based on location data.
+- **Custom Fields:** Case types have unique, conditional fields (e.g., Vehicle registration number for Abandoned Vehicles).
+- **Location Management:** A dedicated Location tab for each case with an interactive map to view and adjust coordinates.
+- **Field Permissions:** Officers can edit operational case details, but system metadata (like case reference, creation date) is read-only.
+- **Team-Based Access:** The system must support multiple teams, with users and cases assigned to specific teams. Case visibility must be restricted based on the user's team membership.
+- **System Configuration:** An admin area to manage system-wide settings like application title, organization name, and default map settings.
+
+**User's preferred language**: English
+
+**what currently exists?**
+A full-stack case management application built with a FastAPI backend, React frontend, and MongoDB database. Key features include role-based authentication (Manager, Supervisor, Officer), a complete case lifecycle management system with an audit trail, evidence uploads, a public reporting form, and case-type specific custom fields. Recently, a Location tab with an interactive map was added to the case detail page, along with logic to enforce read-only system fields.
+
+**Last working item**: 
+-   **Last item agent was working**: Implementing a major feature set for **System Configuration, Teams, and Team-based Case Visibility**. The agent started by modifying the backend () to add new Pydantic models and Enums for , , and expanded s. It also updated the  model to include a  and created new API endpoints for managing settings and teams. The work was paused just before modifying the existing case retrieval endpoints to enforce team-based access control.
+-   **Status**: IN PROGRESS
+-   **Agent Testing Done**: N
+-   **Which testing method agent to use?**: both
+-   **User Testing Done**: N
+
+**All Pending/In progress Issue list**:
+There are no known bugs or unresolved issues from previously completed work. The only pending item is the completion of the in-progress task.
+
+**In progress Task List**:
+-   **Task 1: Implement System Configuration, Teams, and Case Visibility** (Priority: P0)
+    -   **Where to resume**: Resume work in . The next step is to modify the existing case endpoints (e.g., , ) to filter results based on the current user's team membership, using the  helper function that was added.
+    -   **What will be achieved with this?**: The application will support multi-tenancy for different council teams, allowing case access to be securely partitioned. It will also allow administrators to configure the system without requiring code changes.
+    -   **Status**: IN PROGRESS
+    -   **Should Test frontend/backend/both after fix?**: both
+    -   **Blocked on something**: No.
+
+**Upcoming and Future Tasks**
+-   **Upcoming Tasks**:
+    -   **P0: Complete Frontend for Admin Settings & Teams**: Create the React components and pages for an Admin Settings section where managers can update system configuration (app title, logo, etc.) and manage teams.
+    -   **P1: Backend Mandatory Field Validation**: Implement validation logic in the backend case creation/update endpoints to reject requests that are missing mandatory fields (e.g., location, description).
+-   **Future Tasks**:
+    -   **P1: Advanced Search**: Add the ability to search for cases using case-type specific fields (e.g., search by vehicle registration number).
+    -   **P2: Advanced Reporting**: Develop a more advanced reporting dashboard with visualizations and charts, moving beyond the current basic stats and CSV exports.
+    -   **P2: GDPR Case Retention**: Implement a system for defining and enforcing case retention periods to comply with GDPR.
+    -   **P2: Email Notifications**: Integrate an email service (e.g., SendGrid) to send notifications for key events, expanding on the current in-app notification system.
+
+**Completed work in this session**
+-   **Role-Based Auth & JWT**: Implemented user roles and secure authentication (, ).
+-   **Full Case Management Lifecycle**: Built CRUD operations for cases, including status updates and assignments (, , ).
+-   **Case-Type Specific Fields**: Added dynamic forms for different case types on the backend and frontend ().
+-   **Public Reporting Form**: Created a public, unauthenticated form to submit new cases ().
+-   **Location Tab with Interactive Map**: Implemented a Location tab with an interactive map and editable coordinates on the case detail page ().
+-   **Field-Level Permissions**: Differentiated between editable operational data and read-only system metadata based on user role ().
+
+**Earlier issues found/mentioned but not fixed**
+- None
+
+**Known issue recurrence from previous fork**
+- None
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Backend**: FastAPI, Pydantic, Motor (async MongoDB driver), JWT.
+-   **Frontend**: React, React Router, Tailwind CSS, Shadcn UI, .
+-   **Database**: MongoDB.
+-   **Architecture**: A monolithic backend API serving a React Single Page Application (SPA).
+
+**key DB schema**
+-   **cases**: 
+-   **users**: 
+-   **audit_logs**: 
+-   **system_settings**: A singleton document for global configuration.
+-   **teams**: 
+
+**changes in tech stack**
+-    and  were added for map functionality.
+-    was added for asynchronous file handling on the backend.
+
+**All files of reference**
+-   **/app/backend/server.py**: The single, monolithic file containing all backend models, API endpoints, and business logic. It is currently being modified to support teams and system settings.
+-   **/app/frontend/src/pages/CaseDetail.js**: The primary React component for viewing and editing case details. Contains the tabbed interface for Details, Location, Notes, etc.
+-   **/app/frontend/src/components/CaseTypeFields.js**: A key component that dynamically renders form fields based on the selected case type.
+-   **/app/frontend/src/components/LocationTab.js**: A reusable component that provides the interactive map and location editing interface.
+-   **/app/memory/PRD.md**: The living document outlining product requirements and tracking completed work.
+
+**Areas that need refactoring**:
+-   The backend  file is becoming a monolith and should be broken down into a more organized structure (e.g., separate directories for routers, models, and services) to improve maintainability.
+-   The  component, which contains the UI for all case-specific fields, could be split into smaller sub-components for each case type to reduce its complexity.
+
+**key api endpoints**
+-   
+-   
+-   
+-   
+-   
+-   
+-   ,  (new)
+-   ,  (new)
+
+**Critical Info for New Agent**
+-   You are in the middle of a large feature implementation: **Teams and System Configuration**. The backend models and new endpoints have been added, but the core logic to restrict case visibility in existing endpoints (, ) has not been implemented yet. This is your immediate next step.
+-   The backend is a single  file. Be mindful of its size and complexity when making changes.
+-   The frontend heavily utilizes Shadcn UI components and custom composite components like  and .
+-   Always use the  after completing a significant feature or fix to ensure no regressions have been introduced.
+
+**documents and test reports created in this job**
+-   
+-   
+-   
+-   
+-   
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User Request**: Implement Admin Settings, Teams, and Team-based case visibility. **Status: IN PROGRESS**
+2.  Agent Finish Summary: Location Tab and Read-Only fields feature completed. **Status: COMPLETED**
+3.  Agent Action: Confirmed all tests passed for the Location Tab feature. **Status: COMPLETED**
+4.  Agent Action: Ran testing agent for the Location Tab feature. **Status: COMPLETED**
+5.  Agent Action: Manually tested the backend location update endpoint. **Status: COMPLETED**
+6.  Agent Action: Took screenshot verifying the interactive map is rendering. **Status: COMPLETED**
+7.  Agent Action: Took screenshot verifying the Location tab is rendering. **Status: COMPLETED**
+8.  **User Request**: Implement Editable vs. Read-Only fields, a Location Tab with a map, and mandatory field rules. **Status: COMPLETED**
+9.  Agent Finish Summary: Case-Type Specific Fields feature completed. **Status: COMPLETED**
+10. Agent Action: Took screenshot verifying the Create Case dialog works with specific fields. **Status: COMPLETED**
+
+**Project Health Check:**
+-   **Broken**: None. The application was in a stable, tested state before the current feature work began.
+-   **Mocked**: None.
+
+**3rd Party Integrations**
+-   None.
+
+**Testing status**
+-   **Testing agent used after significant changes**: YES
+-   **Troubleshoot agent used after agent stuck in loop**: NO
+-   **Test files created**: []
+-   **Known regressions**: []
+
+**Credentials to test flow:**
+Demo credentials are provided on the login page in the development environment (e.g.,  / ).
+
+**What agent forgot to execute**
+The agent has been diligent in following user requests. No tasks appear to have been forgotten. The next steps logically follow from the current in-progress feature.</analysis>

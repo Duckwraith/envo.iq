@@ -7,7 +7,7 @@ from datetime import datetime
 import base64
 
 class GovEnforceAPITester:
-    def __init__(self, base_url="https://council-enforce.preview.emergentagent.com/api"):
+    def __init__(self, base_url="https://casetracker-16.preview.emergentagent.com/api"):
         self.base_url = base_url
         self.tokens = {}
         self.users = {}
