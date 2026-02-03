@@ -219,11 +219,21 @@ const Cases = () => {
                       <SelectValue placeholder="Select case type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="fly_tipping">Fly Tipping</SelectItem>
+                      <SelectItem value="fly_tipping">Fly Tipping (General)</SelectItem>
+                      <SelectItem value="fly_tipping_private">Fly Tipping (Private Land)</SelectItem>
+                      <SelectItem value="fly_tipping_organised">Fly Tipping (Organised Crime)</SelectItem>
                       <SelectItem value="abandoned_vehicle">Abandoned Vehicle</SelectItem>
+                      <SelectItem value="nuisance_vehicle">Nuisance Vehicle</SelectItem>
+                      <SelectItem value="nuisance_vehicle_seller">Nuisance Vehicle (On-Street Seller)</SelectItem>
+                      <SelectItem value="nuisance_vehicle_parking">Nuisance Vehicle (Parking)</SelectItem>
+                      <SelectItem value="nuisance_vehicle_asb">Nuisance Vehicle (ASB)</SelectItem>
                       <SelectItem value="littering">Littering</SelectItem>
                       <SelectItem value="dog_fouling">Dog Fouling</SelectItem>
                       <SelectItem value="pspo_dog_control">PSPO Dog Control</SelectItem>
+                      <SelectItem value="untidy_land">Untidy Land</SelectItem>
+                      <SelectItem value="high_hedges">High Hedges</SelectItem>
+                      <SelectItem value="waste_carrier_licensing">Waste Carrier / Licensing</SelectItem>
+                      <SelectItem value="complex_environmental">Complex Environmental Offence</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
