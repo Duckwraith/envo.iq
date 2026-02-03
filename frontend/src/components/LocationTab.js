@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
@@ -10,7 +10,10 @@ import {
   Loader2,
   History,
   Navigation,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  Search,
+  RefreshCw
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +34,17 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// Map center controller component
+const MapCenterController = ({ center, zoom }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center && center[0] && center[1]) {
+      map.setView(center, zoom);
+    }
+  }, [center, zoom, map]);
+  return null;
+};
 
 // Draggable marker component
 const DraggableMarker = ({ position, onPositionChange, draggable }) => {
@@ -80,9 +94,19 @@ const LocationTab = ({ caseData, canEdit, onLocationUpdate }) => {
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [w3wSearch, setW3wSearch] = useState('');
+  const [w3wLoading, setW3wLoading] = useState(false);
+  const [w3wEnabled, setW3wEnabled] = useState(true);
+  const [mapSettings, setMapSettings] = useState({
+    default_latitude: 51.5074,
+    default_longitude: -0.1278,
+    default_zoom: 12
+  });
 
-  // Default center: London
-  const defaultCenter = [51.5074, -0.1278];
+  useEffect(() => {
+    fetchSettings();
+    checkW3wStatus();
+  }, []);
 
   useEffect(() => {
     if (caseData?.location) {
@@ -95,6 +119,29 @@ const LocationTab = ({ caseData, canEdit, onLocationUpdate }) => {
       });
     }
   }, [caseData?.location]);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/settings`);
+      if (response.data?.map_settings) {
+        setMapSettings(response.data.map_settings);
+      }
+      if (response.data?.enable_what3words !== undefined) {
+        setW3wEnabled(response.data.enable_what3words);
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    }
+  };
+
+  const checkW3wStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/w3w/status`);
+      setW3wEnabled(response.data.enabled && response.data.api_available);
+    } catch (error) {
+      setW3wEnabled(false);
+    }
+  };
 
   const handleFieldChange = (field, value) => {
     setLocation(prev => ({ ...prev, [field]: value }));
@@ -127,11 +174,99 @@ const LocationTab = ({ caseData, canEdit, onLocationUpdate }) => {
     }
   };
 
+  // Convert W3W to coordinates
+  const handleW3wSearch = async () => {
+    if (!w3wSearch.trim()) {
+      toast.error('Please enter a what3words address');
+      return;
+    }
+    
+    // Clean up the input - remove /// prefix if present
+    let words = w3wSearch.trim().toLowerCase();
+    if (words.startsWith('///')) {
+      words = words.substring(3);
+    }
+    
+    setW3wLoading(true);
+    try {
+      const response = await axios.post(`${API}/w3w/convert`, { words });
+      if (response.data.success) {
+        setLocation(prev => ({
+          ...prev,
+          latitude: response.data.latitude,
+          longitude: response.data.longitude,
+          what3words: `///${response.data.words}`
+        }));
+        setHasChanges(true);
+        toast.success(`Location set from what3words: ${response.data.words}`);
+        setW3wSearch('');
+      } else {
+        toast.error(response.data.error || 'Could not convert what3words address');
+      }
+    } catch (error) {
+      toast.error('Failed to convert what3words address');
+    } finally {
+      setW3wLoading(false);
+    }
+  };
+
+  // Convert coordinates to W3W
+  const handleGetW3wFromCoords = async () => {
+    if (!location.latitude || !location.longitude) {
+      toast.error('Please set coordinates first');
+      return;
+    }
+    
+    setW3wLoading(true);
+    try {
+      const response = await axios.post(`${API}/w3w/convert`, {
+        latitude: location.latitude,
+        longitude: location.longitude
+      });
+      if (response.data.success) {
+        setLocation(prev => ({
+          ...prev,
+          what3words: `///${response.data.words}`
+        }));
+        setHasChanges(true);
+        toast.success('what3words address retrieved');
+      } else {
+        toast.error(response.data.error || 'Could not get what3words address');
+      }
+    } catch (error) {
+      toast.error('what3words service unavailable');
+    } finally {
+      setW3wLoading(false);
+    }
+  };
+
+  // Copy W3W to clipboard
+  const handleCopyW3w = async () => {
+    if (!location.what3words) {
+      toast.error('No what3words address to copy');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(location.what3words);
+      toast.success('what3words copied to clipboard');
+    } catch (error) {
+      toast.error('Failed to copy');
+    }
+  };
+
   const getMapCenter = () => {
     if (location.latitude && location.longitude) {
       return [location.latitude, location.longitude];
     }
-    return defaultCenter;
+    // Use admin settings default, NOT London
+    return [mapSettings.default_latitude, mapSettings.default_longitude];
+  };
+
+  const getMapZoom = () => {
+    if (location.latitude && location.longitude) {
+      return 15;
+    }
+    return mapSettings.default_zoom;
   };
 
   const hasLocation = location.latitude && location.longitude;
@@ -191,7 +326,7 @@ const LocationTab = ({ caseData, canEdit, onLocationUpdate }) => {
                   ) : (
                     <>
                       <Save className="w-4 h-4 mr-2" />
-                      Save Location
+                      Confirm Location
                     </>
                   )}
                 </Button>
@@ -229,15 +364,43 @@ const LocationTab = ({ caseData, canEdit, onLocationUpdate }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <Label>what3words Reference</Label>
-            <Input
-              placeholder="e.g., ///filled.count.soap"
-              value={location.what3words}
-              onChange={(e) => handleFieldChange('what3words', e.target.value.toLowerCase())}
-              disabled={!editMode}
-              data-testid="location-w3w"
-              className={!editMode ? 'bg-gray-50' : ''}
-            />
+            <Label className="flex items-center justify-between">
+              <span>what3words Reference</span>
+              {location.what3words && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={handleCopyW3w}
+                  data-testid="copy-w3w-btn"
+                >
+                  <Copy className="w-3 h-3 mr-1" />
+                  Copy
+                </Button>
+              )}
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="e.g., ///filled.count.soap"
+                value={location.what3words}
+                onChange={(e) => handleFieldChange('what3words', e.target.value.toLowerCase())}
+                disabled={!editMode}
+                data-testid="location-w3w"
+                className={!editMode ? 'bg-gray-50 flex-1' : 'flex-1'}
+              />
+              {editMode && w3wEnabled && hasLocation && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleGetW3wFromCoords}
+                  disabled={w3wLoading}
+                  title="Get W3W from coordinates"
+                  data-testid="refresh-w3w-btn"
+                >
+                  <RefreshCw className={`w-4 h-4 ${w3wLoading ? 'animate-spin' : ''}`} />
+                </Button>
+              )}
+            </div>
             <p className="text-xs text-[#505A5F]">Format: ///word.word.word</p>
           </div>
           <div className="space-y-2">
@@ -268,6 +431,41 @@ const LocationTab = ({ caseData, canEdit, onLocationUpdate }) => {
           </div>
         </div>
 
+        {/* W3W Search (only in edit mode and when W3W is enabled) */}
+        {editMode && w3wEnabled && (
+          <div className="p-4 bg-blue-50 rounded-lg space-y-3">
+            <Label className="text-blue-800 font-medium">Search by what3words</Label>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter what3words address (e.g., filled.count.soap)"
+                value={w3wSearch}
+                onChange={(e) => setW3wSearch(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleW3wSearch()}
+                className="flex-1 bg-white"
+                data-testid="w3w-search-input"
+              />
+              <Button
+                onClick={handleW3wSearch}
+                disabled={w3wLoading || !w3wSearch.trim()}
+                className="bg-blue-600 hover:bg-blue-700"
+                data-testid="w3w-search-btn"
+              >
+                {w3wLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 mr-2" />
+                    Set Location
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-blue-600">
+              Enter a what3words address to automatically set the map location
+            </p>
+          </div>
+        )}
+
         {/* Location validation message */}
         {!hasAnyLocationData && (
           <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-sm text-amber-800">
@@ -294,10 +492,10 @@ const LocationTab = ({ caseData, canEdit, onLocationUpdate }) => {
           <div className="h-[400px] rounded-sm overflow-hidden border" data-testid="location-map">
             <MapContainer
               center={getMapCenter()}
-              zoom={hasLocation ? 15 : 10}
+              zoom={getMapZoom()}
               style={{ height: '100%', width: '100%' }}
-              key={`${location.latitude}-${location.longitude}`}
             >
+              <MapCenterController center={getMapCenter()} zoom={getMapZoom()} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
