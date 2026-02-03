@@ -361,13 +361,18 @@ const CaseDetail = () => {
                   </Select>
                 </div>
               )}
-                
+              
+              {/* Status change - Officers can change to investigating, only supervisors/managers can close */}
+              {canEditCase() && (
                 <div className="space-y-1">
-                  <Label className="text-xs text-[#505A5F]">Status</Label>
+                  <Label className="text-xs text-[#505A5F]">
+                    Status 
+                    {!canClose() && <span className="ml-1">(Supervisors close cases)</span>}
+                  </Label>
                   <Select
                     value={caseData.status}
                     onValueChange={handleStatusChange}
-                    disabled={caseData.status === 'closed' && !canClose()}
+                    disabled={caseData.status === 'closed'}
                   >
                     <SelectTrigger className="w-48" data-testid="status-select">
                       <SelectValue />
@@ -380,18 +385,22 @@ const CaseDetail = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Tabs */}
       <Tabs defaultValue="details" className="space-y-4">
-        <TabsList className="bg-white border">
+        <TabsList className="bg-white border flex-wrap">
           <TabsTrigger value="details" data-testid="details-tab">
             <ClipboardList className="w-4 h-4 mr-2" />
             Details
+          </TabsTrigger>
+          <TabsTrigger value="location" data-testid="location-tab">
+            <MapPin className="w-4 h-4 mr-2" />
+            Location
           </TabsTrigger>
           <TabsTrigger value="notes" data-testid="notes-tab">
             <MessageSquare className="w-4 h-4 mr-2" />
