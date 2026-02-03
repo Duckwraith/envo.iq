@@ -824,10 +824,28 @@ async def get_case(case_id: str, current_user: dict = Depends(get_current_user))
 async def create_case(case_data: CaseCreate, current_user: dict = Depends(get_current_user)):
     ref_number = await generate_reference_number(case_data.case_type)
     
+    # Determine owning team
+    owning_team = case_data.owning_team
+    owning_team_name = None
+    
+    # If no team specified, auto-assign based on user's team or case type mapping
+    if not owning_team:
+        user_teams = current_user.get("teams", [])
+        if user_teams:
+            owning_team = user_teams[0]  # Default to user's first team
+    
+    # Get team name if team is assigned
+    if owning_team:
+        team = await db.teams.find_one({"id": owning_team}, {"_id": 0})
+        if team:
+            owning_team_name = team["name"]
+    
     case = Case(
-        **case_data.model_dump(),
+        **case_data.model_dump(exclude={"owning_team"}),
         reference_number=ref_number,
-        created_by=current_user["id"]
+        created_by=current_user["id"],
+        owning_team=owning_team,
+        owning_team_name=owning_team_name
     )
     
     doc = case.model_dump()
