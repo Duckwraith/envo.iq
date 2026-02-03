@@ -185,6 +185,15 @@ class LocationData(BaseModel):
     address: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    what3words: Optional[str] = None  # what3words reference
+
+class LocationUpdate(BaseModel):
+    """Separate model for location updates to track changes"""
+    postcode: Optional[str] = None
+    address: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    what3words: Optional[str] = None
 
 class CaseCreate(BaseModel):
     case_type: CaseType
@@ -193,6 +202,7 @@ class CaseCreate(BaseModel):
     reporter_name: Optional[str] = None
     reporter_contact: Optional[str] = None
     type_specific_fields: Optional[CaseTypeSpecificFields] = None
+    reporting_source: Optional[ReportingSource] = ReportingSource.OFFICER
 
 class CaseUpdate(BaseModel):
     description: Optional[str] = None
