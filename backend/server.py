@@ -866,6 +866,11 @@ async def update_case(case_id: str, updates: CaseUpdate, current_user: dict = De
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
     
+    # Check team-based access
+    if not await can_user_access_case(current_user, case):
+        await log_access_decision(current_user, f"case:{case_id}", "update", False, "Team access denied")
+        raise HTTPException(status_code=403, detail="Not authorized to update this case - team access denied")
+    
     # Permission checks
     if current_user["role"] == UserRole.OFFICER.value:
         if case.get("assigned_to") != current_user["id"]:
@@ -878,6 +883,17 @@ async def update_case(case_id: str, updates: CaseUpdate, current_user: dict = De
     
     update_data = {k: v for k, v in updates.model_dump(exclude_none=True).items()}
     audit_details = []
+    
+    # Handle team reassignment (manager/supervisor only)
+    if updates.owning_team:
+        if current_user["role"] == UserRole.OFFICER.value:
+            raise HTTPException(status_code=403, detail="Officers cannot reassign case teams")
+        team = await db.teams.find_one({"id": updates.owning_team}, {"_id": 0})
+        if team:
+            update_data["owning_team_name"] = team["name"]
+            audit_details.append(f"Team changed to {team['name']}")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid team ID")
     
     # Handle location updates with history tracking
     if updates.location:
