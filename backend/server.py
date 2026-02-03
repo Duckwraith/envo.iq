@@ -412,10 +412,17 @@ async def require_role(roles: List[UserRole], user: dict = Depends(get_current_u
 async def generate_reference_number(case_type: CaseType) -> str:
     prefix_map = {
         CaseType.FLY_TIPPING: "FT",
+        CaseType.FLY_TIPPING_PRIVATE: "FP",
+        CaseType.FLY_TIPPING_ORGANISED: "FO",
         CaseType.ABANDONED_VEHICLE: "AV",
         CaseType.LITTERING: "LT",
         CaseType.DOG_FOULING: "DF",
-        CaseType.PSPO_DOG_CONTROL: "PS"
+        CaseType.PSPO_DOG_CONTROL: "PS",
+        CaseType.UNTIDY_LAND: "UL",
+        CaseType.HIGH_HEDGES: "HH",
+        CaseType.WASTE_CARRIER_LICENSING: "WC",
+        CaseType.NUISANCE_VEHICLE: "NV",
+        CaseType.COMPLEX_ENVIRONMENTAL: "CE"
     }
     prefix = prefix_map.get(case_type, "GE")
     year = datetime.now().strftime("%y")
@@ -433,6 +440,58 @@ async def create_audit_log(case_id: str, action: str, details: str, user: dict):
     doc = log.model_dump()
     doc['performed_at'] = doc['performed_at'].isoformat()
     await db.audit_logs.insert_one(doc)
+
+async def log_access_decision(user: dict, resource: str, action: str, allowed: bool, reason: str):
+    """Log all access decisions for audit purposes"""
+    log = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["id"],
+        "user_name": user["name"],
+        "user_role": user["role"],
+        "resource": resource,
+        "action": action,
+        "allowed": allowed,
+        "reason": reason,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    await db.access_logs.insert_one(log)
+
+async def get_user_team_ids(user: dict) -> List[str]:
+    """Get list of team IDs the user belongs to"""
+    return user.get("teams", [])
+
+async def can_user_access_case(user: dict, case: dict) -> bool:
+    """Check if user can access a case based on team membership"""
+    # Managers always have access
+    if user["role"] == UserRole.MANAGER.value:
+        return True
+    
+    # Supervisors with cross-team access can see all
+    if user["role"] == UserRole.SUPERVISOR.value and user.get("cross_team_access", False):
+        return True
+    
+    # Check team membership
+    user_teams = user.get("teams", [])
+    case_team = case.get("owning_team")
+    
+    if not user_teams:
+        # Users without team assignment can see all (backward compatibility)
+        return True
+    
+    if not case_team:
+        # Cases without team assignment are visible to all
+        return True
+    
+    return case_team in user_teams
+
+async def get_teams_for_case_type(case_type: CaseType) -> List[str]:
+    """Get team IDs that can handle a case type"""
+    allowed_team_types = CASE_TYPE_TEAMS.get(case_type, [])
+    teams = await db.teams.find(
+        {"team_type": {"$in": [t.value for t in allowed_team_types]}, "is_active": True},
+        {"_id": 0}
+    ).to_list(100)
+    return [t["id"] for t in teams]
 
 async def create_notification(user_id: str, title: str, message: str, case_id: Optional[str] = None):
     notification = Notification(
