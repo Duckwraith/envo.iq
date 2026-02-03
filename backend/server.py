@@ -43,12 +43,42 @@ class UserRole(str, Enum):
     SUPERVISOR = "supervisor"
     MANAGER = "manager"
 
+class TeamType(str, Enum):
+    ENFORCEMENT = "enforcement"
+    ENVIRONMENTAL_CRIMES = "environmental_crimes"
+    WASTE_MANAGEMENT = "waste_management"
+
 class CaseType(str, Enum):
+    # General case types
     FLY_TIPPING = "fly_tipping"
+    FLY_TIPPING_PRIVATE = "fly_tipping_private"
+    FLY_TIPPING_ORGANISED = "fly_tipping_organised"
     ABANDONED_VEHICLE = "abandoned_vehicle"
     LITTERING = "littering"
     DOG_FOULING = "dog_fouling"
     PSPO_DOG_CONTROL = "pspo_dog_control"
+    # Additional case types
+    UNTIDY_LAND = "untidy_land"
+    HIGH_HEDGES = "high_hedges"
+    WASTE_CARRIER_LICENSING = "waste_carrier_licensing"
+    NUISANCE_VEHICLE = "nuisance_vehicle"
+    COMPLEX_ENVIRONMENTAL = "complex_environmental"
+
+# Case type to team mapping
+CASE_TYPE_TEAMS = {
+    CaseType.FLY_TIPPING: [TeamType.WASTE_MANAGEMENT, TeamType.ENFORCEMENT],
+    CaseType.FLY_TIPPING_PRIVATE: [TeamType.ENFORCEMENT],
+    CaseType.FLY_TIPPING_ORGANISED: [TeamType.ENFORCEMENT, TeamType.ENVIRONMENTAL_CRIMES],
+    CaseType.ABANDONED_VEHICLE: [TeamType.ENFORCEMENT],
+    CaseType.LITTERING: [TeamType.WASTE_MANAGEMENT, TeamType.ENFORCEMENT],
+    CaseType.DOG_FOULING: [TeamType.ENFORCEMENT],
+    CaseType.PSPO_DOG_CONTROL: [TeamType.ENFORCEMENT],
+    CaseType.UNTIDY_LAND: [TeamType.ENFORCEMENT],
+    CaseType.HIGH_HEDGES: [TeamType.ENFORCEMENT],
+    CaseType.WASTE_CARRIER_LICENSING: [TeamType.ENFORCEMENT],
+    CaseType.NUISANCE_VEHICLE: [TeamType.ENFORCEMENT],
+    CaseType.COMPLEX_ENVIRONMENTAL: [TeamType.ENVIRONMENTAL_CRIMES],
+}
 
 class CaseStatus(str, Enum):
     NEW = "new"
