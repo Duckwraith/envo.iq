@@ -8,6 +8,8 @@ import Cases from "@/pages/Cases";
 import CaseDetail from "@/pages/CaseDetail";
 import MapView from "@/pages/MapView";
 import Users from "@/pages/Users";
+import Teams from "@/pages/Teams";
+import AdminSettings from "@/pages/AdminSettings";
 import Reports from "@/pages/Reports";
 import PublicReport from "@/pages/PublicReport";
 import Layout from "@/components/Layout";
@@ -57,6 +59,16 @@ function App() {
             <Route path="users" element={
               <ProtectedRoute allowedRoles={["manager"]}>
                 <Users />
+              </ProtectedRoute>
+            } />
+            <Route path="teams" element={
+              <ProtectedRoute allowedRoles={["manager"]}>
+                <Teams />
+              </ProtectedRoute>
+            } />
+            <Route path="settings" element={
+              <ProtectedRoute allowedRoles={["manager"]}>
+                <AdminSettings />
               </ProtectedRoute>
             } />
             <Route path="reports" element={

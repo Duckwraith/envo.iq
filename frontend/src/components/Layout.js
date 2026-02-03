@@ -7,6 +7,8 @@ import {
   FileText,
   Map,
   Users,
+  Users2,
+  Settings,
   BarChart3,
   Bell,
   LogOut,
@@ -80,7 +82,9 @@ const Layout = () => {
     { path: '/cases', label: 'Cases', icon: FileText, roles: ['officer', 'supervisor', 'manager'] },
     { path: '/map', label: 'Map View', icon: Map, roles: ['officer', 'supervisor', 'manager'] },
     { path: '/users', label: 'User Management', icon: Users, roles: ['manager'] },
+    { path: '/teams', label: 'Teams', icon: Users2, roles: ['manager'] },
     { path: '/reports', label: 'Reports', icon: BarChart3, roles: ['supervisor', 'manager'] },
+    { path: '/settings', label: 'Admin Settings', icon: Settings, roles: ['manager'] },
   ];
 
   const filteredNavItems = navItems.filter(item => item.roles.includes(user?.role));
