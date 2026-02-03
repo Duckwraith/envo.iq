@@ -95,6 +95,11 @@ class YesNoUnknown(str, Enum):
     NO = "no"
     UNKNOWN = "unknown"
 
+class ReportingSource(str, Enum):
+    PUBLIC = "public"
+    OFFICER = "officer"
+    OTHER = "other"
+
 # Case-Type Specific Field Models
 class VehicleDetails(BaseModel):
     registration_number: Optional[str] = None
@@ -110,9 +115,11 @@ class FlyTippingDetails(BaseModel):
     offender_description: Optional[str] = None
     vehicle_details: Optional[VehicleDetails] = None
     identifying_evidence: Optional[str] = None
+    no_evidence_available: Optional[bool] = None  # Checkbox for no evidence
 
 class AbandonedVehicleDetails(BaseModel):
     registration_number: Optional[str] = None
+    registration_not_visible: Optional[bool] = None  # Checkbox when reg not visible
     make: Optional[str] = None
     model: Optional[str] = None
     colour: Optional[str] = None
