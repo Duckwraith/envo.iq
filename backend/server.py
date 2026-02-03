@@ -382,6 +382,8 @@ class CaseUpdate(BaseModel):
     location: Optional[LocationData] = None
     type_specific_fields: Optional[CaseTypeSpecificFields] = None
     owning_team: Optional[str] = None  # Can reassign team
+    closure_reason: Optional[str] = None  # Required when closing
+    final_note: Optional[str] = None  # Required when closing
 
 class Case(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -404,6 +406,13 @@ class Case(BaseModel):
     location_history: Optional[List[dict]] = None  # Track location changes
     owning_team: Optional[str] = None  # Team ID
     owning_team_name: Optional[str] = None  # Team name for display
+    # Closure details
+    closure_reason: Optional[str] = None
+    final_note: Optional[str] = None
+    closed_by: Optional[str] = None
+    closed_by_name: Optional[str] = None
+    # W3W cache
+    w3w_cached_at: Optional[str] = None  # Timestamp of last W3W lookup
 
 class CaseNote(BaseModel):
     model_config = ConfigDict(extra="ignore")
