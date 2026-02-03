@@ -223,6 +223,22 @@ export const FlyTippingFields = ({ data, onChange, readOnly = false, hasEvidence
             data-testid="fly-tipping-evidence"
           />
         </div>
+
+        {/* Evidence requirement checkbox */}
+        {!hasEvidence && (
+          <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-sm">
+            <Checkbox
+              id="no-evidence"
+              checked={fields.no_evidence_available || false}
+              onCheckedChange={(checked) => updateField('no_evidence_available', checked)}
+              disabled={readOnly}
+              data-testid="fly-tipping-no-evidence-checkbox"
+            />
+            <label htmlFor="no-evidence" className="text-sm text-amber-800 cursor-pointer">
+              No photographic evidence available for this case
+            </label>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
