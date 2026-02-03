@@ -313,6 +313,7 @@ const Users = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Teams</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -336,6 +337,27 @@ const Users = () => {
                       <Badge className={`${getRoleBadge(user.role)} capitalize`}>
                         {user.role}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.teams && user.teams.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {user.teams.slice(0, 2).map(teamId => {
+                            const team = teams.find(t => t.id === teamId);
+                            return team ? (
+                              <Badge key={teamId} variant="outline" className="text-xs">
+                                {team.name}
+                              </Badge>
+                            ) : null;
+                          })}
+                          {user.teams.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{user.teams.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-[#B1B4B6]">No teams</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {user.is_active !== false ? (
