@@ -797,6 +797,74 @@ const CaseDetail = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Case Closure Dialog */}
+      <Dialog open={showClosureDialog} onOpenChange={setShowClosureDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Close Case</DialogTitle>
+            <DialogDescription>
+              Please provide a closure reason and final note to close this case.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="closure-reason">Closure Reason *</Label>
+              <Select value={closureReason} onValueChange={setClosureReason}>
+                <SelectTrigger data-testid="closure-reason-select">
+                  <SelectValue placeholder="Select reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="resolved">Issue Resolved</SelectItem>
+                  <SelectItem value="no_action_required">No Action Required</SelectItem>
+                  <SelectItem value="insufficient_evidence">Insufficient Evidence</SelectItem>
+                  <SelectItem value="prosecution_successful">Prosecution Successful</SelectItem>
+                  <SelectItem value="warning_issued">Warning Issued</SelectItem>
+                  <SelectItem value="fpn_paid">FPN Paid</SelectItem>
+                  <SelectItem value="transferred">Transferred to Another Agency</SelectItem>
+                  <SelectItem value="duplicate">Duplicate Case</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="final-note">Final Note *</Label>
+              <Textarea
+                id="final-note"
+                placeholder="Provide a summary of the case outcome..."
+                value={finalNote}
+                onChange={(e) => setFinalNote(e.target.value)}
+                rows={4}
+                data-testid="closure-final-note"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowClosureDialog(false)}
+                disabled={closingCase}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCloseCase}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={closingCase || !closureReason || !finalNote.trim()}
+                data-testid="confirm-close-case-btn"
+              >
+                {closingCase ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Closing...
+                  </>
+                ) : (
+                  'Close Case'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
