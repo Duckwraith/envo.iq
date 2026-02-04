@@ -295,7 +295,7 @@ const Dashboard = () => {
       {/* Recent Cases */}
       <Card className="border">
         <CardHeader className="border-b flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Recent Cases</CardTitle>
+          <CardTitle className="text-lg">{isOfficer ? 'My Cases' : 'Recent Cases'}</CardTitle>
           <Link to="/cases" className="text-sm text-[#005EA5] hover:underline">
             View all
           </Link>
@@ -304,7 +304,12 @@ const Dashboard = () => {
           {recentCases.length === 0 ? (
             <div className="p-8 text-center text-[#505A5F]">
               <FileText className="w-12 h-12 mx-auto mb-3 text-[#B1B4B6]" />
-              <p>No cases found</p>
+              <p>{isOfficer ? 'No cases assigned to you' : 'No cases found'}</p>
+              {isOfficer && (
+                <Link to="/cases" className="text-[#005EA5] hover:underline text-sm mt-2 inline-block">
+                  Browse unassigned cases
+                </Link>
+              )}
             </div>
           ) : (
             <div className="divide-y">
