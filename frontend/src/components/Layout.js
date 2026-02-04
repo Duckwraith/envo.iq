@@ -43,13 +43,6 @@ const Layout = () => {
     logo_base64: null
   });
 
-  useEffect(() => {
-    fetchNotifications();
-    fetchSystemSettings();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
   const fetchSystemSettings = async () => {
     try {
       const response = await axios.get(`${API}/settings`);
@@ -68,6 +61,13 @@ const Layout = () => {
       console.error('Failed to fetch notifications:', error);
     }
   };
+
+  useEffect(() => {
+    fetchNotifications();
+    fetchSystemSettings();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const markAsRead = async (notificationId) => {
     try {
