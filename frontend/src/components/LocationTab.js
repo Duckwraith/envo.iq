@@ -148,13 +148,39 @@ const LocationTab = ({ caseData, canEdit, onLocationUpdate }) => {
     setHasChanges(true);
   };
 
-  const handleMarkerDrag = (lat, lng) => {
+  const handleMarkerDrag = async (lat, lng) => {
+    const roundedLat = Math.round(lat * 1000000) / 1000000;
+    const roundedLng = Math.round(lng * 1000000) / 1000000;
+    
     setLocation(prev => ({
       ...prev,
-      latitude: Math.round(lat * 1000000) / 1000000,
-      longitude: Math.round(lng * 1000000) / 1000000
+      latitude: roundedLat,
+      longitude: roundedLng
     }));
     setHasChanges(true);
+    
+    // Auto-fetch address for the new coordinates
+    await fetchAddressFromCoords(roundedLat, roundedLng);
+  };
+
+  const fetchAddressFromCoords = async (lat, lng) => {
+    try {
+      const response = await axios.get(`${API}/geocode/reverse`, {
+        params: { lat, lng }
+      });
+      if (response.data.success) {
+        setLocation(prev => ({
+          ...prev,
+          address: response.data.address || prev.address,
+          postcode: response.data.postcode || prev.postcode
+        }));
+        if (response.data.address) {
+          toast.success('Address auto-filled from coordinates');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch address:', error);
+    }
   };
 
   const handleSaveLocation = async () => {
