@@ -982,6 +982,54 @@ async def get_w3w_status(current_user: dict = Depends(get_current_user)):
         "api_available": api_available
     }
 
+# Reverse Geocoding Endpoint (using OpenStreetMap Nominatim - free)
+@api_router.get("/geocode/reverse")
+async def reverse_geocode(
+    lat: float = Query(..., description="Latitude"),
+    lng: float = Query(..., description="Longitude"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Convert coordinates to address using OpenStreetMap Nominatim"""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                "https://nominatim.openstreetmap.org/reverse",
+                params={
+                    "lat": lat,
+                    "lon": lng,
+                    "format": "json",
+                    "addressdetails": 1
+                },
+                headers={"User-Agent": "GovEnforce/1.0"}
+            )
+            if response.status_code == 200:
+                data = response.json()
+                address = data.get("address", {})
+                
+                # Build formatted address
+                parts = []
+                if address.get("house_number"):
+                    parts.append(address["house_number"])
+                if address.get("road"):
+                    parts.append(address["road"])
+                if address.get("suburb"):
+                    parts.append(address["suburb"])
+                if address.get("city") or address.get("town") or address.get("village"):
+                    parts.append(address.get("city") or address.get("town") or address.get("village"))
+                if address.get("county"):
+                    parts.append(address["county"])
+                
+                return {
+                    "success": True,
+                    "address": ", ".join(parts) if parts else data.get("display_name", ""),
+                    "postcode": address.get("postcode", ""),
+                    "display_name": data.get("display_name", "")
+                }
+            return {"success": False, "error": "Could not geocode location"}
+    except Exception as e:
+        logging.error(f"Reverse geocoding error: {e}")
+        return {"success": False, "error": "Geocoding service unavailable"}
+
 # Case Endpoints
 @api_router.get("/cases")
 async def get_cases(
