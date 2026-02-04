@@ -7,10 +7,10 @@ Build an app for an enforcement team in a United Kingdom local government author
 - **Frontend**: React with Tailwind CSS, Shadcn UI components, React Leaflet
 - **Backend**: FastAPI with MongoDB, httpx for external APIs
 - **Authentication**: JWT-based custom auth (no social login)
-- **External APIs**: What3Words (optional, graceful degradation)
+- **External APIs**: What3Words (optional, graceful degradation), OpenStreetMap Nominatim (reverse geocoding)
 
 ## User Personas
-1. **Officers**: View/update assigned cases, upload evidence, add notes, self-assign from unassigned pool, close cases with reason
+1. **Officers**: View/update assigned cases, upload evidence, add notes, self-assign from unassigned pool, close cases with reason. **Dashboard shows "My Cases" only**
 2. **Supervisors**: Assign/reassign cases, view all cases, close cases, reopen cases
 3. **Managers/Admin**: Reporting, configuration, user management, team management, CSV export
 
@@ -64,52 +64,47 @@ Build an app for an enforcement team in a United Kingdom local government author
   - Team types: Enforcement, Environmental Crimes, Waste Management
   - User-to-team assignment (multiple teams per user)
   - Cross-team access for supervisors
-  - Case type → Team visibility mapping:
-    - Waste Management: Fly-tipping (general) only
-    - Enforcement: Most case types
-    - Environmental Crimes: Full visibility
+  - Case type → Team visibility mapping
 
 - **New Case Types**:
-  - Fly Tipping (Private Land)
-  - Fly Tipping (Organised Crime)
-  - Untidy Land
-  - High Hedges
+  - Fly Tipping (Private Land, Organised Crime)
+  - Untidy Land, High Hedges
   - Waste Carrier / Licensing
-  - Nuisance Vehicle (General)
-  - Nuisance Vehicle (On-Street Seller)
-  - Nuisance Vehicle (Parking)
-  - Nuisance Vehicle (ASB)
+  - Nuisance Vehicle variants (General, On-Street Seller, Parking, ASB)
   - Complex Environmental Offence
 
 - **Case Closure Enhancement**:
   - All users must provide closure reason + final note when closing
-  - Closure reasons: Resolved, No Action Required, Insufficient Evidence, etc.
   - Only supervisors/managers can reopen closed cases
 
-- **Waste Management Clearance Outcome** (for fly-tipping cases):
-  - Items cleared? (Yes/No) - mandatory
-  - Reason not cleared (mandatory if No)
-  - Clearance date and disposal method
+- **Waste Management Clearance Outcome** (for fly-tipping cases)
 
-- **What3Words Integration**:
-  - W3W API status check
-  - Convert W3W → Coordinates
-  - Convert Coordinates → W3W (may be rate limited)
-  - Copy W3W address to clipboard
-  - W3W search in Location Tab
-  - Graceful fallback when API unavailable
+- **What3Words Integration** with graceful fallback
 
-- **Location Tab Enhancements**:
-  - Uses admin-configured map defaults (not hardcoded London)
-  - Interactive map with draggable marker
-  - W3W search and copy functionality
-  - Location history tracking
+### Phase 4 (2026-02-03) - Latest
+- **Officer Dashboard "My Cases"**:
+  - Officers see only their assigned cases on dashboard
+  - Stats show: My Cases, Investigating, Closed by Me, New Assigned
+  - Recent Cases section shows assigned cases only
+
+- **Dynamic Logo from Admin Settings**:
+  - Sidebar logo updates based on uploaded logo in Admin Settings
+  - App title and organization name from settings
+
+- **Map View Admin Defaults**:
+  - Map view uses admin-configured default center and zoom
+  - No longer defaults to London
+
+- **Location Auto-fill**:
+  - Reverse geocoding endpoint using OpenStreetMap Nominatim
+  - Auto-fills address and postcode when map pin is moved
+  - "Lookup Address from Coordinates" button
 
 ## Database Schema
 - **users**: id, email, name, role, teams[], cross_team_access, is_active
 - **cases**: id, reference_number, case_type, status, description, location, assigned_to, owning_team, closure_reason, final_note, type_specific_fields
 - **teams**: id, name, team_type, description, is_active
-- **system_settings**: Singleton document for global configuration
+- **system_settings**: Singleton document for global configuration (app_title, logo_base64, map_settings, etc.)
 - **audit_logs**: case_id, user_id, action, timestamp, details
 - **notes**: case_id, content, created_by
 - **evidence**: case_id, filename, file_data, file_type
@@ -121,6 +116,7 @@ Build an app for an enforcement team in a United Kingdom local government author
 - Teams: GET/POST /api/teams, PUT/DELETE /api/teams/{id}
 - Settings: GET/PUT /api/settings
 - W3W: GET /api/w3w/status, POST /api/w3w/convert
+- Geocode: GET /api/geocode/reverse (lat, lng → address)
 - Notes: GET/POST /api/cases/{id}/notes
 - Evidence: GET/POST /api/cases/{id}/evidence
 - Users: GET /api/users, PUT /api/users/{id}
@@ -135,6 +131,10 @@ Build an app for an enforcement team in a United Kingdom local government author
 - ✅ New case types
 - ✅ Case closure with mandatory reason
 - ✅ W3W integration (with graceful fallback)
+- ✅ Officer "My Cases" dashboard
+- ✅ Dynamic logo from admin settings
+- ✅ Map view uses admin defaults
+- ✅ Location auto-fill from coordinates
 
 ### P1 (Next)
 - Advanced search by case-type specific fields (e.g., vehicle registration)
