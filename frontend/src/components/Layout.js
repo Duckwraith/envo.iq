@@ -37,12 +37,27 @@ const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [systemSettings, setSystemSettings] = useState({
+    app_title: 'GovEnforce',
+    organisation_name: 'Council Enforcement',
+    logo_base64: null
+  });
 
   useEffect(() => {
     fetchNotifications();
+    fetchSystemSettings();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const fetchSystemSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/settings`);
+      setSystemSettings(response.data);
+    } catch (error) {
+      console.error('Failed to fetch system settings:', error);
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
