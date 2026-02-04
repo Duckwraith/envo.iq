@@ -70,9 +70,22 @@ const MapView = () => {
     status: '',
     case_type: ''
   });
+  const [mapSettings, setMapSettings] = useState({
+    default_latitude: 51.5074,
+    default_longitude: -0.1278,
+    default_zoom: 12
+  });
 
-  // Default center: London
-  const defaultCenter = [51.5074, -0.1278];
+  const fetchSettings = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API}/settings`);
+      if (response.data?.map_settings) {
+        setMapSettings(response.data.map_settings);
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    }
+  }, []);
 
   const fetchCases = useCallback(async () => {
     try {
@@ -94,18 +107,32 @@ const MapView = () => {
   }, [filters]);
 
   useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useEffect(() => {
     fetchCases();
   }, [fetchCases]);
+
+  // Use admin-configured default center
+  const defaultCenter = [mapSettings.default_latitude, mapSettings.default_longitude];
+  const defaultZoom = mapSettings.default_zoom;
 
   const getCaseTypeLabel = (type) => {
     const labels = {
       fly_tipping: 'Fly Tipping',
+      fly_tipping_private: 'Fly Tipping (Private)',
+      fly_tipping_organised: 'Fly Tipping (Organised)',
       abandoned_vehicle: 'Abandoned Vehicle',
+      nuisance_vehicle: 'Nuisance Vehicle',
       littering: 'Littering',
       dog_fouling: 'Dog Fouling',
-      pspo_dog_control: 'PSPO Dog Control'
+      pspo_dog_control: 'PSPO Dog Control',
+      untidy_land: 'Untidy Land',
+      high_hedges: 'High Hedges',
+      waste_carrier_licensing: 'Waste Carrier'
     };
-    return labels[type] || type;
+    return labels[type] || type?.replace(/_/g, ' ');
   };
 
   const getStatusBadge = (status) => {
