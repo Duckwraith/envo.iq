@@ -127,12 +127,23 @@ const Layout = () => {
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`} data-testid="sidebar">
         <div className="sidebar-header">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#005EA5] rounded-sm flex items-center justify-center">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
+            {systemSettings.logo_base64 ? (
+              <div className="w-10 h-10 rounded-sm overflow-hidden flex items-center justify-center bg-white">
+                <img 
+                  src={systemSettings.logo_base64} 
+                  alt="Logo" 
+                  className="w-full h-full object-contain"
+                  data-testid="sidebar-logo"
+                />
+              </div>
+            ) : (
+              <div className="w-10 h-10 bg-[#005EA5] rounded-sm flex items-center justify-center">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+            )}
             <div>
-              <h1 className="font-semibold text-lg text-[#0B0C0C]">GovEnforce</h1>
-              <p className="text-xs text-[#505A5F]">Council Enforcement</p>
+              <h1 className="font-semibold text-lg text-[#0B0C0C]">{systemSettings.app_title || 'GovEnforce'}</h1>
+              <p className="text-xs text-[#505A5F]">{systemSettings.organisation_name || 'Council Enforcement'}</p>
             </div>
           </div>
         </div>
