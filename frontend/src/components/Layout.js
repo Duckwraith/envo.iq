@@ -100,6 +100,7 @@ const Layout = () => {
     { path: '/users', label: 'User Management', icon: Users, roles: ['manager'] },
     { path: '/teams', label: 'Teams', icon: Users2, roles: ['manager'] },
     { path: '/reports', label: 'Reports', icon: BarChart3, roles: ['supervisor', 'manager'] },
+    { path: '/fpn-reports', label: 'FPN Reports', icon: Receipt, roles: ['supervisor', 'manager'] },
     { path: '/settings', label: 'Admin Settings', icon: Settings, roles: ['manager'] },
   ];
 
