@@ -554,6 +554,25 @@ const LocationTab = ({ caseData, canEdit, onLocationUpdate }) => {
               No coordinates set. {editMode ? 'Click on the map to set a location.' : 'Edit to add coordinates.'}
             </p>
           )}
+
+          {/* Get Directions Button */}
+          {hasLocation && !editMode && (
+            <div className="flex justify-center pt-2">
+              <Button
+                variant="default"
+                onClick={() => {
+                  // Open in native maps app (works on mobile and desktop)
+                  const url = `https://www.google.com/maps/dir/?api=1&destination=${location.latitude},${location.longitude}`;
+                  window.open(url, '_blank');
+                }}
+                className="bg-[#00703C] hover:bg-[#005a30] text-white"
+                data-testid="get-directions-btn"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Get Directions
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Location History */}
