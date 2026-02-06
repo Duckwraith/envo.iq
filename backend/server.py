@@ -384,6 +384,15 @@ class CaseUpdate(BaseModel):
     closure_reason: Optional[str] = None  # Required when closing
     final_note: Optional[str] = None  # Required when closing
 
+# Fixed Penalty Notice Model
+class FixedPenaltyNotice(BaseModel):
+    fpn_ref: Optional[str] = None
+    date_issued: Optional[str] = None
+    fpn_amount: Optional[float] = None
+    paid: bool = False
+    date_paid: Optional[str] = None
+    pay_reference: Optional[str] = None
+
 class Case(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -412,6 +421,9 @@ class Case(BaseModel):
     closed_by_name: Optional[str] = None
     # W3W cache
     w3w_cached_at: Optional[str] = None  # Timestamp of last W3W lookup
+    # Fixed Penalty Notice
+    fpn_issued: bool = False
+    fpn_details: Optional[FixedPenaltyNotice] = None
 
 class CaseNote(BaseModel):
     model_config = ConfigDict(extra="ignore")
