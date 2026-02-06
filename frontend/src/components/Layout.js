@@ -210,6 +210,17 @@ const Layout = () => {
           </h2>
           
           <div className="flex items-center gap-4">
+            {/* Mobile View Toggle */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full" data-testid="mobile-view-toggle">
+              <Monitor size={16} className={!mobileViewEnabled ? 'text-[#005EA5]' : 'text-gray-400'} />
+              <Switch
+                checked={mobileViewEnabled}
+                onCheckedChange={toggleMobileView}
+                className="data-[state=checked]:bg-[#005EA5]"
+              />
+              <Smartphone size={16} className={mobileViewEnabled ? 'text-[#005EA5]' : 'text-gray-400'} />
+            </div>
+
             {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
