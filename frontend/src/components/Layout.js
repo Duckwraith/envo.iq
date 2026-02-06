@@ -314,6 +314,21 @@ const Layout = () => {
                   <p className="font-medium">{user?.name}</p>
                   <p className="text-xs text-[#505A5F]">{user?.email}</p>
                 </div>
+                {/* Mobile view toggle in dropdown for small screens */}
+                <div className="sm:hidden px-4 py-2 border-b">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#505A5F]">Mobile View</span>
+                    <div className="flex items-center gap-2">
+                      <Monitor size={14} className={!mobileViewEnabled ? 'text-[#005EA5]' : 'text-gray-400'} />
+                      <Switch
+                        checked={mobileViewEnabled}
+                        onCheckedChange={toggleMobileView}
+                        className="data-[state=checked]:bg-[#005EA5]"
+                      />
+                      <Smartphone size={14} className={mobileViewEnabled ? 'text-[#005EA5]' : 'text-gray-400'} />
+                    </div>
+                  </div>
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-[#D4351C]">
                   <LogOut size={16} className="mr-2" />
