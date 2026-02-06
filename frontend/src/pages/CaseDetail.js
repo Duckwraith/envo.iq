@@ -470,9 +470,35 @@ const CaseDetail = () => {
                       <SelectItem value="new">New</SelectItem>
                       <SelectItem value="assigned">Assigned</SelectItem>
                       <SelectItem value="investigating">Investigating</SelectItem>
-                      {canClose() && <SelectItem value="closed">Closed</SelectItem>}
+                      <SelectItem value="closed">Closed</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {/* FPN Issued Checkbox */}
+              {canEditCase() && (
+                <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <Checkbox
+                    id="fpn-issued"
+                    checked={caseData.fpn_issued || false}
+                    onCheckedChange={async (checked) => {
+                      try {
+                        await axios.put(`${API}/cases/${caseId}`, { fpn_issued: checked });
+                        toast.success(checked ? 'FPN marked as issued' : 'FPN removed');
+                        fetchCaseData();
+                      } catch (error) {
+                        toast.error('Failed to update FPN status');
+                      }
+                    }}
+                    data-testid="fpn-issued-checkbox"
+                  />
+                  <label htmlFor="fpn-issued" className="text-sm font-medium text-amber-800 cursor-pointer">
+                    Fixed Penalty Issued
+                  </label>
+                  {caseData.fpn_issued && caseData.fpn_details?.paid && (
+                    <Badge className="ml-2 bg-green-100 text-green-800">Paid</Badge>
+                  )}
                 </div>
               )}
             </div>
