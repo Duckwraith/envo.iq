@@ -48,6 +48,35 @@
     border-top: 1px solid #E5E7EB;
 }
 
+/* Sidebar navigation links */
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    color: #505A5F;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    font-size: 0.875rem;
+}
+
+.sidebar-link:hover {
+    background: #F3F2F1;
+    color: #0B0C0C;
+}
+
+.sidebar-link.active {
+    background: #E8F1F8;
+    color: #005EA5;
+    border-right: 3px solid #005EA5;
+}
+
+@media (max-width: 768px) {
+    .sidebar-link.active {
+        border-right: none;
+    }
+}
+
 /* Cards */
 .stat-card {
     background: white;
