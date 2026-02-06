@@ -26,7 +26,8 @@ import {
   ClipboardList,
   Save,
   Lock,
-  Globe
+  Globe,
+  Receipt
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -53,6 +55,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { CaseTypeFields } from '@/components/CaseTypeFields';
 import LocationTab from '@/components/LocationTab';
+import FPNTab from '@/components/FPNTab';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
