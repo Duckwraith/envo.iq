@@ -804,6 +804,23 @@ async def get_system_settings(current_user: dict = Depends(get_current_user)):
         return default_settings.model_dump()
     return settings
 
+# Public settings endpoint (for login page branding)
+@api_router.get("/settings/public")
+async def get_public_settings():
+    """Get public settings (no auth required) - for login page branding"""
+    settings = await db.system_settings.find_one({"id": "system_settings"}, {"_id": 0})
+    if not settings:
+        default_settings = SystemSettings()
+        settings = default_settings.model_dump()
+    
+    # Only return safe public fields
+    return {
+        "app_title": settings.get("app_title", "GovEnforce"),
+        "organisation_name": settings.get("organisation_name", "Council Enforcement"),
+        "logo_base64": settings.get("logo_base64"),
+        "enable_public_reporting": settings.get("enable_public_reporting", True)
+    }
+
 @api_router.put("/settings")
 async def update_system_settings(updates: SystemSettingsUpdate, current_user: dict = Depends(get_current_user)):
     """Update system settings - managers only"""
