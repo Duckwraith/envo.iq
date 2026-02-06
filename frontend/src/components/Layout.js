@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMobileView } from '@/contexts/MobileViewContext';
 import axios from 'axios';
 import {
   LayoutDashboard,
@@ -16,7 +17,9 @@ import {
   Menu,
   X,
   Shield,
-  ChevronDown
+  ChevronDown,
+  Smartphone,
+  Monitor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,11 +31,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const Layout = () => {
   const { user, logout } = useAuth();
+  const { mobileViewEnabled, toggleMobileView, isMobileDevice } = useMobileView();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
