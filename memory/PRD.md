@@ -112,8 +112,11 @@ Build an app for an enforcement team in a United Kingdom local government author
 - ✅ Location auto-fill
 - ✅ Fixed Penalty Notice tracking
 - ✅ FPN Reports with statistics & outstanding list
+- ✅ Mobile View Toggle (Feb 2026) - Toggle in header and user dropdown, bottom navigation bar in mobile mode
+- ✅ Get Directions Button (Feb 2026) - Opens Google Maps with case coordinates from Location tab
 
 ### P1 (Next)
+- FPN Reporting Enhancements: Aging buckets (0-28 days, 29-56 days, 56+ days)
 - Advanced search by case-type fields (vehicle registration)
 - Backend mandatory field validation
 - FPN payment reminders/notifications
@@ -122,5 +125,4 @@ Build an app for an enforcement team in a United Kingdom local government author
 - Advanced reporting dashboard with charts
 - GDPR case retention automation
 - Email notifications (SendGrid)
-- Mobile-optimized views
 - Offline capability
