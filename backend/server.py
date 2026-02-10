@@ -479,6 +479,79 @@ class PublicReport(BaseModel):
     evidence_files: Optional[List[str]] = None  # Base64 encoded files
     type_specific_fields: Optional[CaseTypeSpecificFields] = None
 
+# Person Models (Reporters/Offenders)
+class PersonType(str, Enum):
+    REPORTER = "reporter"
+    OFFENDER = "offender"
+    BOTH = "both"
+
+class PersonTitle(str, Enum):
+    MR = "Mr"
+    MRS = "Mrs"
+    MS = "Ms"
+    MISS = "Miss"
+    DR = "Dr"
+    OTHER = "Other"
+
+class PersonAddress(BaseModel):
+    line1: Optional[str] = None
+    line2: Optional[str] = None
+    city: Optional[str] = None
+    county: Optional[str] = None
+    postcode: Optional[str] = None
+
+class Person(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    person_type: PersonType = PersonType.REPORTER
+    title: Optional[PersonTitle] = None
+    first_name: str
+    last_name: str
+    date_of_birth: Optional[str] = None
+    address: Optional[PersonAddress] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    id_type: Optional[str] = None  # driving_license, passport, national_id, other
+    id_number: Optional[str] = None
+    notes: Optional[str] = None
+    linked_cases: List[str] = Field(default_factory=list)  # List of case IDs
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: Optional[str] = None
+    created_by_name: Optional[str] = None
+
+class PersonCreate(BaseModel):
+    person_type: PersonType = PersonType.REPORTER
+    title: Optional[PersonTitle] = None
+    first_name: str
+    last_name: str
+    date_of_birth: Optional[str] = None
+    address: Optional[PersonAddress] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    id_type: Optional[str] = None
+    id_number: Optional[str] = None
+    notes: Optional[str] = None
+
+class PersonUpdate(BaseModel):
+    person_type: Optional[PersonType] = None
+    title: Optional[PersonTitle] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    address: Optional[PersonAddress] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    id_type: Optional[str] = None
+    id_number: Optional[str] = None
+    notes: Optional[str] = None
+
+# Case-Person link
+class CasePersonLink(BaseModel):
+    case_id: str
+    person_id: str
+    role: PersonType  # reporter or offender for this specific case
+
 # Helper Functions
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
