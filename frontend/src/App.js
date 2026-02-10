@@ -70,6 +70,11 @@ function App() {
                   <Teams />
                 </ProtectedRoute>
               } />
+              <Route path="persons" element={
+                <ProtectedRoute allowedRoles={["manager", "supervisor"]}>
+                  <Persons />
+                </ProtectedRoute>
+              } />
               <Route path="settings" element={
                 <ProtectedRoute allowedRoles={["manager"]}>
                   <AdminSettings />
