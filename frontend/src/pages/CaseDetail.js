@@ -27,7 +27,8 @@ import {
   Save,
   Lock,
   Globe,
-  Receipt
+  Receipt,
+  UserCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +57,7 @@ import { Separator } from '@/components/ui/separator';
 import { CaseTypeFields } from '@/components/CaseTypeFields';
 import LocationTab from '@/components/LocationTab';
 import FPNTab from '@/components/FPNTab';
+import PersonsTab from '@/components/PersonsTab';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
