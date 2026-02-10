@@ -1902,6 +1902,343 @@ async def export_fpn_csv(
         "filename": f"fpn_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     }
 
+# ==================== PERSON ENDPOINTS ====================
+
+def filter_person_for_role(person: dict, user_role: str) -> dict:
+    """Filter person fields based on user role - officers see limited info"""
+    if user_role == UserRole.MANAGER.value:
+        return person
+    # Officers and supervisors see limited fields
+    return {
+        "id": person.get("id"),
+        "person_type": person.get("person_type"),
+        "title": person.get("title"),
+        "first_name": person.get("first_name"),
+        "last_name": person.get("last_name"),
+        "phone": person.get("phone"),
+        "email": person.get("email"),
+        "linked_cases": person.get("linked_cases", []),
+        "created_at": person.get("created_at")
+    }
+
+@api_router.get("/persons")
+async def list_persons(
+    search: Optional[str] = None,
+    person_type: Optional[PersonType] = None,
+    skip: int = 0,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user)
+):
+    """List all persons with optional filtering"""
+    query = {}
+    
+    if search:
+        query["$or"] = [
+            {"first_name": {"$regex": search, "$options": "i"}},
+            {"last_name": {"$regex": search, "$options": "i"}},
+            {"email": {"$regex": search, "$options": "i"}},
+            {"phone": {"$regex": search, "$options": "i"}}
+        ]
+    
+    if person_type:
+        if person_type == PersonType.BOTH:
+            query["person_type"] = person_type.value
+        else:
+            query["$or"] = query.get("$or", [])
+            query["person_type"] = {"$in": [person_type.value, PersonType.BOTH.value]}
+    
+    total = await db.persons.count_documents(query)
+    persons = await db.persons.find(query, {"_id": 0}).sort("last_name", 1).skip(skip).limit(limit).to_list(limit)
+    
+    # Filter based on role
+    filtered_persons = [filter_person_for_role(p, current_user["role"]) for p in persons]
+    
+    return {
+        "persons": filtered_persons,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
+
+@api_router.get("/persons/{person_id}")
+async def get_person(
+    person_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get a specific person by ID"""
+    person = await db.persons.find_one({"id": person_id}, {"_id": 0})
+    if not person:
+        raise HTTPException(status_code=404, detail="Person not found")
+    
+    return filter_person_for_role(person, current_user["role"])
+
+@api_router.post("/persons")
+async def create_person(
+    person_data: PersonCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Create a new person record"""
+    person = Person(
+        **person_data.model_dump(),
+        created_by=current_user["id"],
+        created_by_name=current_user["name"]
+    )
+    
+    doc = person.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    doc['updated_at'] = doc['updated_at'].isoformat()
+    
+    await db.persons.insert_one(doc)
+    
+    # Create audit log
+    await db.audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "entity_type": "person",
+        "entity_id": person.id,
+        "action": "created",
+        "details": f"Person {person.first_name} {person.last_name} created as {person.person_type.value}",
+        "performed_by": current_user["id"],
+        "performed_by_name": current_user["name"],
+        "performed_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return filter_person_for_role(doc, current_user["role"])
+
+@api_router.put("/persons/{person_id}")
+async def update_person(
+    person_id: str,
+    person_data: PersonUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update an existing person"""
+    existing = await db.persons.find_one({"id": person_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Person not found")
+    
+    # Only managers can update sensitive fields
+    if current_user["role"] != UserRole.MANAGER.value:
+        allowed_fields = {"phone", "email", "notes"}
+        update_data = {k: v for k, v in person_data.model_dump(exclude_unset=True).items() if k in allowed_fields}
+    else:
+        update_data = {k: v for k, v in person_data.model_dump(exclude_unset=True).items() if v is not None}
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.persons.update_one({"id": person_id}, {"$set": update_data})
+    
+    # Create audit log
+    await db.audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "entity_type": "person",
+        "entity_id": person_id,
+        "action": "updated",
+        "details": f"Person updated: {', '.join(update_data.keys())}",
+        "performed_by": current_user["id"],
+        "performed_by_name": current_user["name"],
+        "performed_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    updated = await db.persons.find_one({"id": person_id}, {"_id": 0})
+    return filter_person_for_role(updated, current_user["role"])
+
+@api_router.delete("/persons/{person_id}")
+async def delete_person(
+    person_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete a person (managers only)"""
+    if current_user["role"] != UserRole.MANAGER.value:
+        raise HTTPException(status_code=403, detail="Only managers can delete persons")
+    
+    person = await db.persons.find_one({"id": person_id})
+    if not person:
+        raise HTTPException(status_code=404, detail="Person not found")
+    
+    # Check if linked to cases
+    if person.get("linked_cases"):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete person linked to {len(person['linked_cases'])} case(s). Unlink from cases first."
+        )
+    
+    await db.persons.delete_one({"id": person_id})
+    
+    # Create audit log
+    await db.audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "entity_type": "person",
+        "entity_id": person_id,
+        "action": "deleted",
+        "details": f"Person {person['first_name']} {person['last_name']} deleted",
+        "performed_by": current_user["id"],
+        "performed_by_name": current_user["name"],
+        "performed_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": "Person deleted successfully"}
+
+@api_router.post("/cases/{case_id}/persons/{person_id}")
+async def link_person_to_case(
+    case_id: str,
+    person_id: str,
+    role: PersonType = Query(..., description="Role of person in this case"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Link a person to a case as reporter or offender"""
+    case = await db.cases.find_one({"id": case_id})
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    person = await db.persons.find_one({"id": person_id})
+    if not person:
+        raise HTTPException(status_code=404, detail="Person not found")
+    
+    # Determine field to update on case
+    link_field = f"{role.value}_id"
+    
+    # Update case with person link
+    await db.cases.update_one(
+        {"id": case_id},
+        {"$set": {link_field: person_id, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Update person's linked_cases
+    linked_cases = person.get("linked_cases", [])
+    if case_id not in linked_cases:
+        linked_cases.append(case_id)
+        await db.persons.update_one(
+            {"id": person_id},
+            {"$set": {"linked_cases": linked_cases, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    
+    # Update person_type if needed
+    current_type = person.get("person_type")
+    if role.value != current_type and current_type != PersonType.BOTH.value:
+        await db.persons.update_one(
+            {"id": person_id},
+            {"$set": {"person_type": PersonType.BOTH.value}}
+        )
+    
+    # Create audit logs
+    await db.audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "case_id": case_id,
+        "action": f"{role.value}_linked",
+        "details": f"{role.value.title()} linked: {person['first_name']} {person['last_name']}",
+        "performed_by": current_user["id"],
+        "performed_by_name": current_user["name"],
+        "performed_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": f"Person linked as {role.value}"}
+
+@api_router.delete("/cases/{case_id}/persons/{person_id}")
+async def unlink_person_from_case(
+    case_id: str,
+    person_id: str,
+    role: PersonType = Query(..., description="Role to unlink"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Unlink a person from a case"""
+    case = await db.cases.find_one({"id": case_id})
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    person = await db.persons.find_one({"id": person_id})
+    if not person:
+        raise HTTPException(status_code=404, detail="Person not found")
+    
+    # Remove link from case
+    link_field = f"{role.value}_id"
+    await db.cases.update_one(
+        {"id": case_id},
+        {"$unset": {link_field: ""}, "$set": {"updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    # Remove case from person's linked_cases
+    linked_cases = person.get("linked_cases", [])
+    # Only remove if not linked as another role
+    other_role = "offender" if role.value == "reporter" else "reporter"
+    other_link = case.get(f"{other_role}_id")
+    if other_link != person_id and case_id in linked_cases:
+        linked_cases.remove(case_id)
+        await db.persons.update_one(
+            {"id": person_id},
+            {"$set": {"linked_cases": linked_cases, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    
+    # Create audit log
+    await db.audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "case_id": case_id,
+        "action": f"{role.value}_unlinked",
+        "details": f"{role.value.title()} unlinked: {person['first_name']} {person['last_name']}",
+        "performed_by": current_user["id"],
+        "performed_by_name": current_user["name"],
+        "performed_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    return {"message": f"Person unlinked from case"}
+
+@api_router.get("/cases/{case_id}/persons")
+async def get_case_persons(
+    case_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all persons linked to a case"""
+    case = await db.cases.find_one({"id": case_id}, {"_id": 0})
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    result = {"reporter": None, "offender": None}
+    
+    reporter_id = case.get("reporter_id")
+    if reporter_id:
+        reporter = await db.persons.find_one({"id": reporter_id}, {"_id": 0})
+        if reporter:
+            result["reporter"] = filter_person_for_role(reporter, current_user["role"])
+    
+    offender_id = case.get("offender_id")
+    if offender_id:
+        offender = await db.persons.find_one({"id": offender_id}, {"_id": 0})
+        if offender:
+            result["offender"] = filter_person_for_role(offender, current_user["role"])
+    
+    return result
+
+@api_router.get("/persons/{person_id}/cases")
+async def get_person_cases(
+    person_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get all cases linked to a person"""
+    person = await db.persons.find_one({"id": person_id})
+    if not person:
+        raise HTTPException(status_code=404, detail="Person not found")
+    
+    linked_case_ids = person.get("linked_cases", [])
+    if not linked_case_ids:
+        return []
+    
+    cases = await db.cases.find(
+        {"id": {"$in": linked_case_ids}},
+        {"_id": 0, "id": 1, "reference_number": 1, "case_type": 1, "status": 1, 
+         "description": 1, "reporter_id": 1, "offender_id": 1, "created_at": 1}
+    ).to_list(100)
+    
+    # Add role info for each case
+    for case in cases:
+        case["person_role"] = []
+        if case.get("reporter_id") == person_id:
+            case["person_role"].append("reporter")
+        if case.get("offender_id") == person_id:
+            case["person_role"].append("offender")
+    
+    return cases
+
 # Initialize default admin user on startup
 @app.on_event("startup")
 async def startup_event():
