@@ -90,7 +90,13 @@ const MapView = () => {
   const fetchCases = useCallback(async () => {
     try {
       const params = new URLSearchParams();
-      if (filters.status && filters.status !== 'all') params.append('status', filters.status);
+      // Default to showing only open cases (exclude closed)
+      if (filters.status && filters.status !== 'all') {
+        params.append('status', filters.status);
+      } else {
+        // When no status filter, exclude closed cases for live map
+        params.append('exclude_closed', 'true');
+      }
       if (filters.case_type && filters.case_type !== 'all') params.append('case_type', filters.case_type);
       
       const response = await axios.get(`${API}/cases?${params.toString()}`);
