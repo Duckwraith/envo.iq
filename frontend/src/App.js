@@ -14,6 +14,7 @@ import Persons from "@/pages/Persons";
 import AdminSettings from "@/pages/AdminSettings";
 import Reports from "@/pages/Reports";
 import FPNReports from "@/pages/FPNReports";
+import ClosedCasesMap from "@/pages/ClosedCasesMap";
 import PublicReport from "@/pages/PublicReport";
 import Layout from "@/components/Layout";
 
