@@ -542,6 +542,82 @@ const Cases = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Duplicate VRM Warning Dialog */}
+      <Dialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              <Car className="w-5 h-5" />
+              Duplicate Vehicle Registration Found
+            </DialogTitle>
+            <DialogDescription>
+              This vehicle registration ({duplicateWarning?.vrm}) has been reported in {duplicateWarning?.count} previous case(s).
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 my-4 max-h-60 overflow-y-auto">
+            {duplicateWarning?.duplicates?.map((dup) => (
+              <div
+                key={dup.id}
+                className="p-3 bg-amber-50 border border-amber-200 rounded-md flex items-center justify-between"
+              >
+                <div>
+                  <p className="font-medium text-amber-900">{dup.reference_number}</p>
+                  <p className="text-sm text-amber-700">
+                    {new Date(dup.created_at).toLocaleDateString('en-GB')} - {dup.status}
+                  </p>
+                  {dup.location?.address && (
+                    <p className="text-xs text-amber-600">{dup.location.address}</p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowDuplicateDialog(false);
+                    setShowCreateDialog(false);
+                    navigate(`/cases/${dup.id}`);
+                  }}
+                >
+                  View Case
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-2 pt-4 border-t">
+            <p className="text-sm text-[#505A5F] mb-2">
+              Would you like to create a new case anyway, or view an existing one?
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDuplicateDialog(false);
+                  setDuplicateWarning(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-[#005EA5] hover:bg-[#004F8C]"
+                onClick={() => handleCreateCase(null, true)}
+                disabled={creating}
+              >
+                {creating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create New Case Anyway'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
