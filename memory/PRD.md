@@ -159,6 +159,12 @@ Build an app for an enforcement team in a United Kingdom local government author
 - ✅ Live Map Filter (Feb 2026) - Now only shows open cases (excludes closed)
 - ✅ VRM Search (Feb 2026) - Search cases by vehicle registration number on Cases page
 - ✅ Duplicate Detection on Creation (Feb 2026) - Warns officers before saving case with duplicate VRM, allows viewing existing cases or creating anyway
+- ✅ Team-Based Case Visibility Rules (Dec 2025) - Officers only see case types assigned to their team:
+  - Environmental Crimes: Fly Tipping (general), Abandoned Vehicle, Littering, Dog Fouling, PSPO Dog Control
+  - Enforcement Team: Fly Tipping (private/organised), Nuisance Vehicles (all), Untidy Land, High Hedges, Waste Carrier Licensing, Complex Environmental
+  - Waste Management: Fly Tipping (general), Littering
+  - Managers/Supervisors see all case types
+  - Filter applies to cases list, individual case access, map views, and stats
 
 ### P1 (Next)
 - FPN Reporting Enhancements: Aging buckets (0-28 days, 29-56 days, 56+ days)
