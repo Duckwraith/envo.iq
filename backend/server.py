@@ -1142,9 +1142,14 @@ async def get_cases(
     assigned_to: Optional[str] = None,
     unassigned: Optional[bool] = None,
     team_id: Optional[str] = None,
+    exclude_closed: Optional[bool] = None,
     current_user: dict = Depends(get_current_user)
 ):
     query = {}
+    
+    # Exclude closed cases if requested (for live map)
+    if exclude_closed:
+        query["status"] = {"$ne": CaseStatus.CLOSED.value}
     
     # Team-based filtering
     user_teams = current_user.get("teams", [])
