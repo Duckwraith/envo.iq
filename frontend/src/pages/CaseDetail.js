@@ -579,6 +579,13 @@ const CaseDetail = () => {
               )}
             </CardHeader>
             <CardContent className="p-6">
+              {/* Duplicate VRM Warning for vehicle cases */}
+              <DuplicateVRMWarning
+                caseId={caseData.id}
+                caseType={caseData.case_type}
+                vrm={typeSpecificFields?.registration_number}
+              />
+              
               <CaseTypeFields
                 caseType={caseData.case_type}
                 data={typeSpecificFields}
