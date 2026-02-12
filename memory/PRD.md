@@ -153,6 +153,10 @@ Build an app for an enforcement team in a United Kingdom local government author
 - ✅ Mobile View Toggle (Feb 2026) - Toggle in header and user dropdown, bottom navigation bar in mobile mode
 - ✅ Get Directions Button (Feb 2026) - Opens Google Maps with case coordinates from Location tab
 - ✅ Persons Database (Feb 2026) - Centralized reporter/offender management with role-based visibility
+- ✅ Person Merge (Feb 2026) - Managers can merge duplicate person records
+- ✅ Duplicate VRM Detection (Feb 2026) - Warning shown when vehicle registration matches previous cases of same type
+- ✅ Closed Cases Map (Feb 2026) - Heat map view under Reports with date filter, auto-transitions to pins on zoom
+- ✅ Live Map Filter (Feb 2026) - Now only shows open cases (excludes closed)
 
 ### P1 (Next)
 - FPN Reporting Enhancements: Aging buckets (0-28 days, 29-56 days, 56+ days)
