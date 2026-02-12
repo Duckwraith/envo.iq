@@ -766,6 +766,42 @@ async def can_user_view_case_type(user: dict, case_type: str) -> bool:
     
     return False
 
+async def get_visible_case_types_for_user(user: dict) -> Optional[List[str]]:
+    """
+    Get list of case types a user can view based on their team assignments.
+    Returns None if user can see all case types (managers, supervisors with cross-team).
+    Returns empty list if user has no team assignments (backward compatibility - see all).
+    """
+    # Managers always see all
+    if user["role"] == UserRole.MANAGER.value:
+        return None
+    
+    # Supervisors with cross-team access see all
+    if user["role"] == UserRole.SUPERVISOR.value and user.get("cross_team_access", False):
+        return None
+    
+    # Regular supervisors see all (they manage teams but need visibility)
+    if user["role"] == UserRole.SUPERVISOR.value:
+        return None
+    
+    # Get user's team types
+    user_team_types = await get_user_team_types(user)
+    if not user_team_types:
+        return None  # Backward compatibility - no teams = see all
+    
+    # Build list of visible case types based on user's team types
+    visible_case_types = set()
+    for case_type, allowed_team_types in CASE_TYPE_VISIBILITY.items():
+        for team_type in user_team_types:
+            try:
+                if TeamType(team_type) in allowed_team_types:
+                    visible_case_types.add(case_type.value)
+                    break
+            except ValueError:
+                continue
+    
+    return list(visible_case_types) if visible_case_types else None
+
 def is_fly_tipping_case(case_type: str) -> bool:
     """Check if case type is a fly-tipping variant"""
     return case_type in [
