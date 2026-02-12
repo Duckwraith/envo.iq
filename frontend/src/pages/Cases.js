@@ -53,7 +53,8 @@ const Cases = () => {
   const [filters, setFilters] = useState({
     status: '',
     case_type: '',
-    search: ''
+    search: '',
+    vrm_search: ''
   });
   const [newCase, setNewCase] = useState({
     case_type: '',
@@ -64,12 +65,15 @@ const Cases = () => {
     },
     type_specific_fields: {}
   });
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
 
   const fetchCases = useCallback(async () => {
     try {
       const params = new URLSearchParams();
       if (filters.status && filters.status !== 'all') params.append('status', filters.status);
       if (filters.case_type && filters.case_type !== 'all') params.append('case_type', filters.case_type);
+      if (filters.vrm_search) params.append('vrm_search', filters.vrm_search);
       
       const response = await axios.get(`${API}/cases?${params.toString()}`);
       setCases(response.data);
@@ -78,7 +82,7 @@ const Cases = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters.status, filters.case_type]);
+  }, [filters.status, filters.case_type, filters.vrm_search]);
 
   useEffect(() => {
     fetchCases();
