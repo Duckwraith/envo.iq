@@ -1147,6 +1147,7 @@ async def get_cases(
     current_user: dict = Depends(get_current_user)
 ):
     query = {}
+    and_conditions = []
     
     # Exclude closed cases if requested (for live map)
     if exclude_closed:
@@ -1156,11 +1157,12 @@ async def get_cases(
     if vrm_search:
         normalized_vrm = vrm_search.replace(" ", "").upper()
         regex_pattern = "".join([c + r"\s*" for c in normalized_vrm]).rstrip(r"\s*")
-        query["$or"] = [
+        vrm_filter = {"$or": [
             {"type_specific_fields.abandoned_vehicle.registration_number": {"$regex": regex_pattern, "$options": "i"}},
             {"type_specific_fields.nuisance_vehicle.registration_number": {"$regex": regex_pattern, "$options": "i"}},
             {"type_specific_fields.registration_number": {"$regex": regex_pattern, "$options": "i"}}
-        ]
+        ]}
+        and_conditions.append(vrm_filter)
     
     # Team-based filtering
     user_teams = current_user.get("teams", [])
@@ -1173,15 +1175,15 @@ async def get_cases(
         if not (current_user["role"] == UserRole.SUPERVISOR.value and has_cross_team):
             if user_teams:
                 # Filter by user's teams or cases without team assignment
-                query["$or"] = [
+                team_filter = {"$or": [
                     {"owning_team": {"$in": user_teams}},
                     {"owning_team": None},
                     {"owning_team": {"$exists": False}}
-                ]
+                ]}
+                and_conditions.append(team_filter)
     
     # Officers can only see assigned cases or unassigned pool
     if current_user["role"] == UserRole.OFFICER.value:
-        team_filter = query.get("$or", [])
         if unassigned:
             query["assigned_to"] = None
         else:
