@@ -2386,11 +2386,25 @@ async def get_case_vrm_duplicates(
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
     
-    vrm = case.get("type_specific_fields", {}).get("registration_number")
+    case_type = case.get("case_type")
+    type_fields = case.get("type_specific_fields", {})
+    
+    # Get VRM from the appropriate nested field based on case type
+    vrm = None
+    if case_type == "abandoned_vehicle" and type_fields.get("abandoned_vehicle"):
+        vrm = type_fields["abandoned_vehicle"].get("registration_number")
+    elif case_type in ["nuisance_vehicle", "nuisance_vehicle_sale", "nuisance_vehicle_repair", "nuisance_vehicle_abandoned"]:
+        if type_fields.get("nuisance_vehicle"):
+            vrm = type_fields["nuisance_vehicle"].get("registration_number")
+    
+    # Also check top-level registration_number for backwards compatibility
+    if not vrm:
+        vrm = type_fields.get("registration_number")
+    
     if not vrm:
         return {"duplicates": [], "count": 0, "has_vrm": False}
     
-    result = await check_duplicate_vrm(vrm, case["case_type"], case_id, current_user)
+    result = await check_duplicate_vrm(vrm, case_type, case_id, current_user)
     result["has_vrm"] = True
     return result
 
