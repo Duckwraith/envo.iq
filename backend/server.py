@@ -2241,6 +2241,216 @@ async def get_person_cases(
     
     return cases
 
+# ==================== PERSON MERGE ====================
+
+class PersonMergeRequest(BaseModel):
+    primary_person_id: str
+    secondary_person_id: str
+
+@api_router.post("/persons/merge")
+async def merge_persons(
+    merge_request: PersonMergeRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Merge two person records - keeps most recent data, managers only"""
+    if current_user["role"] != UserRole.MANAGER.value:
+        raise HTTPException(status_code=403, detail="Only managers can merge persons")
+    
+    primary = await db.persons.find_one({"id": merge_request.primary_person_id})
+    secondary = await db.persons.find_one({"id": merge_request.secondary_person_id})
+    
+    if not primary or not secondary:
+        raise HTTPException(status_code=404, detail="One or both persons not found")
+    
+    if primary["id"] == secondary["id"]:
+        raise HTTPException(status_code=400, detail="Cannot merge a person with itself")
+    
+    # Determine which record is more recent
+    primary_updated = primary.get("updated_at", primary.get("created_at", ""))
+    secondary_updated = secondary.get("updated_at", secondary.get("created_at", ""))
+    
+    # Merge data - most recent non-empty values win
+    merged_data = {}
+    fields_to_merge = ["title", "first_name", "last_name", "date_of_birth", "phone", "email", 
+                       "id_type", "id_number", "notes", "address"]
+    
+    for field in fields_to_merge:
+        primary_val = primary.get(field)
+        secondary_val = secondary.get(field)
+        
+        # If one is empty, use the other
+        if not primary_val and secondary_val:
+            merged_data[field] = secondary_val
+        elif primary_val and not secondary_val:
+            merged_data[field] = primary_val
+        elif primary_val and secondary_val:
+            # Both have values - use most recent
+            if secondary_updated > primary_updated:
+                merged_data[field] = secondary_val
+            else:
+                merged_data[field] = primary_val
+    
+    # Merge person_type - if either is "both" or they differ, set to "both"
+    if primary.get("person_type") != secondary.get("person_type"):
+        merged_data["person_type"] = PersonType.BOTH.value
+    else:
+        merged_data["person_type"] = primary.get("person_type", PersonType.REPORTER.value)
+    
+    # Merge linked_cases
+    primary_cases = set(primary.get("linked_cases", []))
+    secondary_cases = set(secondary.get("linked_cases", []))
+    merged_cases = list(primary_cases | secondary_cases)
+    merged_data["linked_cases"] = merged_cases
+    merged_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    # Update primary person with merged data
+    await db.persons.update_one({"id": primary["id"]}, {"$set": merged_data})
+    
+    # Update all cases that reference secondary person to point to primary
+    await db.cases.update_many(
+        {"reporter_id": secondary["id"]},
+        {"$set": {"reporter_id": primary["id"]}}
+    )
+    await db.cases.update_many(
+        {"offender_id": secondary["id"]},
+        {"$set": {"offender_id": primary["id"]}}
+    )
+    
+    # Delete secondary person
+    await db.persons.delete_one({"id": secondary["id"]})
+    
+    # Create audit log
+    await db.audit_log.insert_one({
+        "id": str(uuid.uuid4()),
+        "entity_type": "person",
+        "entity_id": primary["id"],
+        "action": "merged",
+        "details": f"Merged {secondary['first_name']} {secondary['last_name']} into {primary['first_name']} {primary['last_name']}",
+        "performed_by": current_user["id"],
+        "performed_by_name": current_user["name"],
+        "performed_at": datetime.now(timezone.utc).isoformat()
+    })
+    
+    # Return updated primary person
+    updated = await db.persons.find_one({"id": primary["id"]}, {"_id": 0})
+    return {"message": "Persons merged successfully", "merged_person": updated}
+
+# ==================== DUPLICATE VRM DETECTION ====================
+
+@api_router.get("/cases/check-duplicate-vrm")
+async def check_duplicate_vrm(
+    vrm: str,
+    case_type: str,
+    exclude_case_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Check if a VRM already exists in cases of the same type"""
+    if not vrm:
+        return {"duplicates": [], "count": 0}
+    
+    # Normalize VRM - remove spaces and convert to uppercase
+    normalized_vrm = vrm.replace(" ", "").upper()
+    
+    query = {
+        "case_type": case_type,
+        "type_specific_fields.registration_number": {"$regex": f"^{normalized_vrm}$", "$options": "i"}
+    }
+    
+    if exclude_case_id:
+        query["id"] = {"$ne": exclude_case_id}
+    
+    duplicates = await db.cases.find(
+        query,
+        {"_id": 0, "id": 1, "reference_number": 1, "status": 1, "created_at": 1, 
+         "location": 1, "description": 1}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    return {
+        "duplicates": duplicates,
+        "count": len(duplicates),
+        "vrm": normalized_vrm
+    }
+
+@api_router.get("/cases/{case_id}/duplicate-vrm-check")
+async def get_case_vrm_duplicates(
+    case_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get duplicate VRM cases for a specific case"""
+    case = await db.cases.find_one({"id": case_id}, {"_id": 0})
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    
+    vrm = case.get("type_specific_fields", {}).get("registration_number")
+    if not vrm:
+        return {"duplicates": [], "count": 0, "has_vrm": False}
+    
+    result = await check_duplicate_vrm(vrm, case["case_type"], case_id, current_user)
+    result["has_vrm"] = True
+    return result
+
+# ==================== CLOSED CASES MAP ====================
+
+@api_router.get("/reports/closed-cases-map")
+async def get_closed_cases_for_map(
+    days: int = Query(30, description="Number of days to look back"),
+    current_user: dict = Depends(get_current_user)
+):
+    """Get closed cases with location for map display"""
+    if current_user["role"] not in [UserRole.MANAGER.value, UserRole.SUPERVISOR.value]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Calculate date threshold
+    date_threshold = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+    
+    # Query closed cases with location
+    query = {
+        "status": CaseStatus.CLOSED.value,
+        "updated_at": {"$gte": date_threshold},
+        "location.latitude": {"$ne": None},
+        "location.longitude": {"$ne": None}
+    }
+    
+    cases = await db.cases.find(
+        query,
+        {"_id": 0, "id": 1, "reference_number": 1, "case_type": 1, "description": 1,
+         "location": 1, "closure_reason": 1, "updated_at": 1, "created_at": 1}
+    ).to_list(1000)
+    
+    # Format for map display
+    map_data = []
+    for case in cases:
+        loc = case.get("location", {})
+        if loc.get("latitude") and loc.get("longitude"):
+            map_data.append({
+                "id": case["id"],
+                "reference_number": case["reference_number"],
+                "case_type": case["case_type"],
+                "description": case.get("description", "")[:100],
+                "latitude": loc["latitude"],
+                "longitude": loc["longitude"],
+                "address": loc.get("address", ""),
+                "closure_reason": case.get("closure_reason"),
+                "closed_at": case.get("updated_at"),
+                "created_at": case.get("created_at")
+            })
+    
+    # Calculate stats for the period
+    stats = {
+        "total_closed": len(map_data),
+        "period_days": days,
+        "by_type": {}
+    }
+    
+    for case in map_data:
+        case_type = case["case_type"]
+        stats["by_type"][case_type] = stats["by_type"].get(case_type, 0) + 1
+    
+    return {
+        "cases": map_data,
+        "stats": stats
+    }
+
 # Initialize default admin user on startup
 @app.on_event("startup")
 async def startup_event():
