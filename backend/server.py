@@ -1331,6 +1331,13 @@ async def get_case(case_id: str, current_user: dict = Depends(get_current_user))
         await log_access_decision(current_user, f"case:{case_id}", "view", False, "Team access denied")
         raise HTTPException(status_code=403, detail="Not authorized to view this case - team access denied")
     
+    # Officers: Check case type visibility based on team assignments
+    if current_user["role"] == UserRole.OFFICER.value:
+        case_type = case.get("case_type")
+        if case_type and not await can_user_view_case_type(current_user, case_type):
+            await log_access_decision(current_user, f"case:{case_id}", "view", False, "Case type not visible to user's team")
+            raise HTTPException(status_code=403, detail="Not authorized to view this case type")
+    
     # Officers can only view assigned cases or unassigned ones
     if current_user["role"] == UserRole.OFFICER.value:
         if case.get("assigned_to") and case["assigned_to"] != current_user["id"]:
