@@ -1209,23 +1209,35 @@ async def get_cases(
         ]}
         and_conditions.append(vrm_filter)
     
-    # Team-based filtering
+    # CASE TYPE VISIBILITY FILTER - Officers only see case types their team handles
+    visible_case_types = await get_visible_case_types_for_user(current_user)
+    if visible_case_types is not None and current_user["role"] == UserRole.OFFICER.value:
+        # If user requests a specific case type, check if they can see it
+        if case_type:
+            if case_type.value not in visible_case_types:
+                # User cannot see this case type, return empty
+                return []
+        else:
+            # Filter to only visible case types
+            and_conditions.append({"case_type": {"$in": visible_case_types}})
+    
+    # Team-based filtering (owning_team filter)
     user_teams = current_user.get("teams", [])
     has_cross_team = current_user.get("cross_team_access", False)
     
     # Managers always see all cases
     # Supervisors with cross_team_access see all cases
-    # Others see only cases from their teams (or unassigned teams for backward compat)
-    if current_user["role"] != UserRole.MANAGER.value:
-        if not (current_user["role"] == UserRole.SUPERVISOR.value and has_cross_team):
-            if user_teams:
-                # Filter by user's teams or cases without team assignment
-                team_filter = {"$or": [
-                    {"owning_team": {"$in": user_teams}},
-                    {"owning_team": None},
-                    {"owning_team": {"$exists": False}}
-                ]}
-                and_conditions.append(team_filter)
+    # Regular supervisors see all cases (they need to oversee)
+    # Officers see cases owned by their teams + unassigned
+    if current_user["role"] == UserRole.OFFICER.value:
+        if user_teams:
+            # Filter by user's teams or cases without team assignment
+            team_filter = {"$or": [
+                {"owning_team": {"$in": user_teams}},
+                {"owning_team": None},
+                {"owning_team": {"$exists": False}}
+            ]}
+            and_conditions.append(team_filter)
     
     # Officers can only see assigned cases or unassigned pool
     if current_user["role"] == UserRole.OFFICER.value:
