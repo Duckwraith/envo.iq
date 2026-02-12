@@ -1066,6 +1066,25 @@ async def get_case_type_team_mapping(current_user: dict = Depends(get_current_us
         }
     return result
 
+@api_router.get("/case-types/my-visibility")
+async def get_my_visible_case_types(current_user: dict = Depends(get_current_user)):
+    """Get list of case types visible to the current user based on team assignments"""
+    visible_types = await get_visible_case_types_for_user(current_user)
+    
+    # Get user's team info for display
+    user_teams = current_user.get("teams", [])
+    team_info = []
+    if user_teams:
+        teams = await db.teams.find({"id": {"$in": user_teams}}, {"_id": 0}).to_list(100)
+        team_info = [{"id": t["id"], "name": t["name"], "team_type": t["team_type"]} for t in teams]
+    
+    return {
+        "visible_case_types": visible_types,  # None means all types visible
+        "all_types_visible": visible_types is None,
+        "user_role": current_user["role"],
+        "user_teams": team_info
+    }
+
 # What3Words Endpoints
 class W3WConvertRequest(BaseModel):
     words: Optional[str] = None
