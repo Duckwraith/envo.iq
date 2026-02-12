@@ -2418,9 +2418,36 @@ async def get_case_vrm_duplicates(
     if not vrm:
         return {"duplicates": [], "count": 0, "has_vrm": False}
     
-    result = await check_duplicate_vrm(vrm, case_type, case_id, current_user)
-    result["has_vrm"] = True
-    return result
+    # Normalize VRM and check for duplicates
+    normalized_vrm = vrm.replace(" ", "").upper()
+    regex_pattern = "".join([c + r"\s*" for c in normalized_vrm]).rstrip(r"\s*")
+    
+    # Determine the nested field path based on case type
+    if case_type == "abandoned_vehicle":
+        vrm_field = "type_specific_fields.abandoned_vehicle.registration_number"
+    elif case_type in ["nuisance_vehicle", "nuisance_vehicle_sale", "nuisance_vehicle_repair", "nuisance_vehicle_abandoned"]:
+        vrm_field = "type_specific_fields.nuisance_vehicle.registration_number"
+    else:
+        vrm_field = "type_specific_fields.registration_number"
+    
+    query = {
+        "case_type": case_type,
+        vrm_field: {"$regex": f"^{regex_pattern}$", "$options": "i"},
+        "id": {"$ne": case_id}  # Exclude current case
+    }
+    
+    duplicates = await db.cases.find(
+        query,
+        {"_id": 0, "id": 1, "reference_number": 1, "status": 1, "created_at": 1, 
+         "location": 1, "description": 1}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    return {
+        "duplicates": duplicates,
+        "count": len(duplicates),
+        "vrm": normalized_vrm,
+        "has_vrm": True
+    }
 
 # ==================== CLOSED CASES MAP ====================
 
