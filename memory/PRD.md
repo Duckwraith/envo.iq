@@ -157,6 +157,8 @@ Build an app for an enforcement team in a United Kingdom local government author
 - ✅ Duplicate VRM Detection (Feb 2026) - Warning shown when vehicle registration matches previous cases of same type
 - ✅ Closed Cases Map (Feb 2026) - Heat map view under Reports with date filter, auto-transitions to pins on zoom
 - ✅ Live Map Filter (Feb 2026) - Now only shows open cases (excludes closed)
+- ✅ VRM Search (Feb 2026) - Search cases by vehicle registration number on Cases page
+- ✅ Duplicate Detection on Creation (Feb 2026) - Warns officers before saving case with duplicate VRM, allows viewing existing cases or creating anyway
 
 ### P1 (Next)
 - FPN Reporting Enhancements: Aging buckets (0-28 days, 29-56 days, 56+ days)
