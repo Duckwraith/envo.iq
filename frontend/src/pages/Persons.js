@@ -237,6 +237,31 @@ const Persons = () => {
     }
   };
 
+  const handleMerge = async () => {
+    if (!mergePrimary || !mergeSecondary) {
+      toast.error('Please select both persons to merge');
+      return;
+    }
+    
+    setMerging(true);
+    try {
+      await axios.post(`${API}/persons/merge`, {
+        primary_person_id: mergePrimary.id,
+        secondary_person_id: mergeSecondary.id
+      });
+      toast.success('Persons merged successfully');
+      setMergeDialogOpen(false);
+      setMergePrimary(null);
+      setMergeSecondary(null);
+      fetchPersons();
+    } catch (error) {
+      const errorDetail = error.response?.data?.detail;
+      toast.error(typeof errorDetail === 'string' ? errorDetail : 'Failed to merge persons');
+    } finally {
+      setMerging(false);
+    }
+  };
+
   const getTypeBadgeColor = (type) => {
     switch (type) {
       case 'reporter': return 'bg-blue-100 text-blue-800';
