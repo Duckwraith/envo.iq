@@ -2385,48 +2385,6 @@ async def merge_persons(
 
 # ==================== DUPLICATE VRM DETECTION ====================
 
-@api_router.get("/cases/check-duplicate-vrm")
-async def check_duplicate_vrm(
-    vrm: str,
-    case_type: str,
-    exclude_case_id: Optional[str] = None,
-    current_user: dict = Depends(get_current_user)
-):
-    """Check if a VRM already exists in cases of the same type"""
-    if not vrm:
-        return {"duplicates": [], "count": 0}
-    
-    # Normalize VRM - remove spaces and convert to uppercase
-    normalized_vrm = vrm.replace(" ", "").upper()
-    
-    # Determine the nested field path based on case type
-    if case_type == "abandoned_vehicle":
-        vrm_field = "type_specific_fields.abandoned_vehicle.registration_number"
-    elif case_type in ["nuisance_vehicle", "nuisance_vehicle_sale", "nuisance_vehicle_repair", "nuisance_vehicle_abandoned"]:
-        vrm_field = "type_specific_fields.nuisance_vehicle.registration_number"
-    else:
-        vrm_field = "type_specific_fields.registration_number"
-    
-    query = {
-        "case_type": case_type,
-        vrm_field: {"$regex": f"^{normalized_vrm}$", "$options": "i"}
-    }
-    
-    if exclude_case_id:
-        query["id"] = {"$ne": exclude_case_id}
-    
-    duplicates = await db.cases.find(
-        query,
-        {"_id": 0, "id": 1, "reference_number": 1, "status": 1, "created_at": 1, 
-         "location": 1, "description": 1}
-    ).sort("created_at", -1).limit(10).to_list(10)
-    
-    return {
-        "duplicates": duplicates,
-        "count": len(duplicates),
-        "vrm": normalized_vrm
-    }
-
 @api_router.get("/cases/{case_id}/duplicate-vrm-check")
 async def get_case_vrm_duplicates(
     case_id: str,
