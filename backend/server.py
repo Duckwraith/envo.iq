@@ -1794,22 +1794,40 @@ async def submit_public_report(report: PublicReport):
 # Statistics Endpoints
 @api_router.get("/stats/overview")
 async def get_stats_overview(current_user: dict = Depends(get_current_user)):
-    total_cases = await db.cases.count_documents({})
-    open_cases = await db.cases.count_documents({"status": {"$ne": CaseStatus.CLOSED.value}})
-    closed_cases = await db.cases.count_documents({"status": CaseStatus.CLOSED.value})
-    unassigned_cases = await db.cases.count_documents({"assigned_to": None})
+    # Build query based on user's visibility
+    query = {}
     
-    # Cases by type
+    # Officers only see stats for their visible case types
+    if current_user["role"] == UserRole.OFFICER.value:
+        visible_case_types = await get_visible_case_types_for_user(current_user)
+        if visible_case_types is not None:
+            query["case_type"] = {"$in": visible_case_types}
+    
+    total_cases = await db.cases.count_documents(query)
+    open_query = {**query, "status": {"$ne": CaseStatus.CLOSED.value}}
+    open_cases = await db.cases.count_documents(open_query)
+    closed_query = {**query, "status": CaseStatus.CLOSED.value}
+    closed_cases = await db.cases.count_documents(closed_query)
+    unassigned_query = {**query, "assigned_to": None}
+    unassigned_cases = await db.cases.count_documents(unassigned_query)
+    
+    # Cases by type (filtered for officers)
     pipeline = [
+        {"$match": query} if query else {"$match": {}},
         {"$group": {"_id": "$case_type", "count": {"$sum": 1}}}
     ]
+    if not query:
+        pipeline = [{"$group": {"_id": "$case_type", "count": {"$sum": 1}}}]
     by_type = await db.cases.aggregate(pipeline).to_list(20)
     cases_by_type = {item["_id"]: item["count"] for item in by_type}
     
-    # Cases by status
+    # Cases by status (filtered for officers)
     pipeline = [
+        {"$match": query} if query else {"$match": {}},
         {"$group": {"_id": "$status", "count": {"$sum": 1}}}
     ]
+    if not query:
+        pipeline = [{"$group": {"_id": "$status", "count": {"$sum": 1}}}]
     by_status = await db.cases.aggregate(pipeline).to_list(20)
     cases_by_status = {item["_id"]: item["count"] for item in by_status}
     
