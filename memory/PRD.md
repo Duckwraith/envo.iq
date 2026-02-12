@@ -94,9 +94,11 @@ Build an app for an enforcement team in a United Kingdom local government author
 
 ### Other Key Endpoints
 - Auth: `/api/auth/login`, `/api/auth/register`, `/api/auth/me`
-- Cases: `/api/cases`, `/api/cases/{id}`
-- Teams: `/api/teams`
+- Cases: `/api/cases`, `/api/cases/{id}`, `/api/cases/check-duplicate-vrm`, `/api/cases/{id}/duplicate-vrm-check`
+- Teams: `/api/teams`, `/api/case-types/teams`, `/api/case-types/my-visibility` (NEW - returns visible case types for current user)
+- Persons: `/api/persons`, `/api/persons/{id}`, `/api/persons/merge`
 - Settings: `/api/settings`, `/api/settings/public`
+- Reports: `/api/reports/closed-cases-map`
 - W3W: `/api/w3w/status`, `/api/w3w/convert`
 - Geocode: `/api/geocode/reverse`
 
