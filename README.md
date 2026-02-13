@@ -1,2 +1,3 @@
 # Here are your Instructions
-<img width="757" height="283" alt="envo_iq_logo_fixed" src="https://github.com/user-attachments/assets/b15a7c60-9232-4ecd-aa01-1eb0a9cbdf52" />
+
+<img width="735" height="260" alt="envo_iq_logo" src="https://github.com/user-attachments/assets/431483a7-ea61-417a-8f43-b09c0d61afdf" />
